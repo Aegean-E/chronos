@@ -3,3 +3,11 @@
 .aikit/*.bak
 .aikit/*.tmp_*
 .aikit/*.corrupt_*
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Local Chronos runtime data
+.chronos/
+
