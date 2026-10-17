@@ -3,9 +3,10 @@
   "active_task": {
     "task_id": "task-chronos-core-v1",
     "last_phase": "phase 3",
-    "active_phase": 3,
-    "status": "in_progress",
-    "updated_at": 1792259465.3213792
+    "active_phase": 5,
+    "status": "completed",
+    "updated_at": 1792259465.3213792,
+    "completed_at": 1792259557.4491756
   },
   "checkpoints": [
     {
@@ -53,6 +54,15 @@
       "status": "in_progress",
       "timestamp": 1792259465.3213792,
       "timestamp_str": "2026-10-17 20:51:05"
+    },
+    {
+      "task_id": "task-chronos-core-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-core-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792259557.449177,
+      "timestamp_str": "2026-10-17 20:52:37"
     }
   ]
 }
