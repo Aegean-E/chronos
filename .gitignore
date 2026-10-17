@@ -1,0 +1,5 @@
+# AIKit transient state
+.aikit/*.lock
+.aikit/*.bak
+.aikit/*.tmp_*
+.aikit/*.corrupt_*
