@@ -1,0 +1,99 @@
+"""Integration tests for Chronos CLI commands."""
+
+import io
+import json
+import shutil
+import tempfile
+import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+
+from chronos.cli import main
+
+
+class TestCLIIntegration(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.temp_dir, ignore_errors=True)
+
+    def run_cli(self, *args):
+        stdout_buf = io.StringIO()
+        stderr_buf = io.StringIO()
+        cmd_args = ["--data-dir", str(self.temp_dir)] + list(args)
+        with redirect_stdout(stdout_buf), redirect_stderr(stderr_buf):
+            exit_code = main(cmd_args)
+        return exit_code, stdout_buf.getvalue(), stderr_buf.getvalue()
+
+    def test_full_session_flow(self):
+        # 1. Start task
+        code, out, _ = self.run_cli("task", "add", "Build Integration Tests", "--estimate", "45")
+        self.assertEqual(code, 0)
+        self.assertIn("Added task", out)
+
+        # 2. List tasks
+        code, out, _ = self.run_cli("task", "list")
+        self.assertEqual(code, 0)
+        self.assertIn("Build Integration Tests", out)
+
+        # 3. Start session
+        code, out, _ = self.run_cli("start", "Coding Milestone", "--duration", "25", "--tag", "code")
+        self.assertEqual(code, 0)
+        self.assertIn("Started focus session", out)
+
+        # 4. Status active
+        code, out, _ = self.run_cli("status")
+        self.assertEqual(code, 0)
+        self.assertIn("ACTIVE", out)
+        self.assertIn("#code", out)
+
+        # 5. Status JSON
+        code, out, _ = self.run_cli("status", "--json")
+        self.assertEqual(code, 0)
+        parsed = json.loads(out)
+        self.assertEqual(parsed["title"], "Coding Milestone")
+
+        # 6. Pause & resume
+        code, out, _ = self.run_cli("pause")
+        self.assertEqual(code, 0)
+        self.assertIn("Paused session", out)
+
+        code, out, _ = self.run_cli("resume")
+        self.assertEqual(code, 0)
+        self.assertIn("Resumed session", out)
+
+        # 7. Interrupt
+        code, out, _ = self.run_cli("interrupt", "Slack DM", "--duration", "30")
+        self.assertEqual(code, 0)
+        self.assertIn("Interruption logged", out)
+
+        # 8. Finish session
+        code, out, _ = self.run_cli("finish", "--notes", "Shipped cleanly")
+        self.assertEqual(code, 0)
+        self.assertIn("Completed focus session", out)
+
+        # 9. Verify stats
+        code, out, _ = self.run_cli("stats")
+        self.assertEqual(code, 0)
+        self.assertIn("CHRONOS INSIGHTS", out)
+        self.assertIn("Completed Sessions:   1 / 1", out)
+
+        # 10. Verify stats JSON
+        code, out, _ = self.run_cli("stats", "--json")
+        self.assertEqual(code, 0)
+        stats_json = json.loads(out)
+        self.assertEqual(stats_json["completed_count"], 1)
+
+    def test_abort_session(self):
+        self.run_cli("start", "Doomed Session")
+        code, out, _ = self.run_cli("abort", "--reason", "Emergency meeting")
+        self.assertEqual(code, 0)
+        self.assertIn("Aborted session", out)
+
+        # Status should show no active session
+        code, out, _ = self.run_cli("status")
+        self.assertEqual(code, 0)
+        self.assertIn("No active focus session", out)
+
+
+if __name__ == "__main__":
+    unittest.main()

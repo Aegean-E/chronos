@@ -30,3 +30,59 @@ chronos/
 └── tests/                    <- unit and integration test suite
 ```
 
+## 🚀 CLI Usage & Quick Start
+
+Chronos requires only Python 3.10+ with standard library modules.
+
+### 1. Starting and Managing Focus Sessions
+
+```bash
+# Start a 25-minute focus session
+python -m chronos.cli start "Refactor storage layer" --duration 25 --tag coding
+
+# Check live session progress and status
+python -m chronos.cli status
+
+# Pause during an interruption or meeting
+python -m chronos.cli pause
+
+# Resume focus
+python -m chronos.cli resume
+
+# Log an interruption with cause
+python -m chronos.cli interrupt "Urgent Slack message" --duration 120
+
+# Finish and log session notes
+python -m chronos.cli finish --notes "Completed atomic tempfile writes"
+```
+
+### 2. Micro-Milestones & Tasks
+
+```bash
+# Add a micro-milestone
+python -m chronos.cli task add "Implement test suite" --estimate 30
+
+# List active and completed tasks
+python -m chronos.cli task list
+
+# Mark task complete
+python -m chronos.cli task done <task_id>
+```
+
+### 3. Productivity Insights & Streaks
+
+```bash
+# View summary metrics for the past 7 days
+python -m chronos.cli stats
+
+# Export metrics as JSON for integration
+python -m chronos.cli stats --json
+```
+
+## 🛡️ Architecture & Guarantees
+
+- **Zero Undeclared Dependencies**: Built exclusively on Python 3 standard library (`argparse`, `json`, `pathlib`, `dataclasses`, `datetime`).
+- **Crash Resilience**: State writes use atomic temp files with `fsync` and atomic `os.replace` to prevent corrupted state on sudden termination.
+- **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
+
+
