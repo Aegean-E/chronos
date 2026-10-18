@@ -18,7 +18,7 @@ class Repository:
         data = self.storage.read_json_safe(self.storage.history_path, default=[])
         if not isinstance(data, list):
             return []
-        return [Session.from_dict(item) for item in data if isinstance(item, dict)]
+        return [Session.from_dict(item) for item in data if isinstance(item, dict) and item.get("session_id")]
 
     def append_session(self, session: Session) -> None:
         """Append a completed or aborted session to history."""
@@ -36,7 +36,7 @@ class Repository:
         data = self.storage.read_json_safe(self.storage.tasks_path, default=[])
         if not isinstance(data, list):
             return []
-        return [TaskItem.from_dict(item) for item in data if isinstance(item, dict)]
+        return [TaskItem.from_dict(item) for item in data if isinstance(item, dict) and item.get("task_id")]
 
     def save_task(self, task: TaskItem) -> None:
         """Create or update a task item."""

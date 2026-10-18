@@ -24,6 +24,15 @@ class SessionOrchestrator:
             return None
         return Session.from_dict(raw)
 
+    def _accumulate_active_segment(self, session: Session) -> None:
+        """Add the seconds since the last resume to the session's running total."""
+        if session.state != SessionState.ACTIVE or not session.last_resumed_at:
+            return
+        now_dt = datetime.now(timezone.utc)
+        resumed_dt = datetime.fromisoformat(session.last_resumed_at)
+        delta = int((now_dt - resumed_dt).total_seconds())
+        session.elapsed_seconds += max(0, delta)
+
     def start_session(
         self,
         title: str,
@@ -64,11 +73,7 @@ class SessionOrchestrator:
         if not session or session.state != SessionState.ACTIVE:
             raise RuntimeError("No active session to pause.")
 
-        now_dt = datetime.now(timezone.utc)
-        if session.last_resumed_at:
-            resumed_dt = datetime.fromisoformat(session.last_resumed_at)
-            delta = int((now_dt - resumed_dt).total_seconds())
-            session.elapsed_seconds += max(0, delta)
+        self._accumulate_active_segment(session)
 
         session.state = SessionState.PAUSED
         session.last_resumed_at = None
@@ -103,11 +108,7 @@ class SessionOrchestrator:
         if not session:
             raise RuntimeError("No active session to finish.")
 
-        if session.state == SessionState.ACTIVE and session.last_resumed_at:
-            now_dt = datetime.now(timezone.utc)
-            resumed_dt = datetime.fromisoformat(session.last_resumed_at)
-            delta = int((now_dt - resumed_dt).total_seconds())
-            session.elapsed_seconds += max(0, delta)
+        self._accumulate_active_segment(session)
 
         session.state = SessionState.COMPLETED
         session.ended_at = now_iso()
@@ -132,6 +133,8 @@ class SessionOrchestrator:
         session = self.get_active_session()
         if not session:
             raise RuntimeError("No active session to abort.")
+
+        self._accumulate_active_segment(session)
 
         session.state = SessionState.ABORTED
         session.ended_at = now_iso()

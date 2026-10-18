@@ -1,27 +1,31 @@
 """Productivity metrics, streak tracking, and focus analytics."""
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from chronos.models import Session, SessionState
 
 
 def parse_date(iso_str: str) -> datetime:
-    """Parse an ISO date string into a UTC datetime."""
+    """Parse an ISO date string into a UTC-aware datetime; naive input is read as UTC."""
     try:
-        return datetime.fromisoformat(iso_str)
+        parsed = datetime.fromisoformat(iso_str)
     except (ValueError, TypeError):
         return datetime.now(timezone.utc)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, Any]:
     """Calculate focus metrics over a given historical window."""
     now = datetime.now(timezone.utc)
+    window = timedelta(days=days_window)
     filtered = []
     for s in sessions:
-        dt = parse_date(s.started_at)
-        if (now - dt).days <= days_window:
+        age = now - parse_date(s.started_at)
+        if timedelta(0) <= age <= window:
             filtered.append(s)
 
     total_seconds = sum(s.elapsed_seconds for s in filtered)

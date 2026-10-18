@@ -71,7 +71,7 @@ class Session:
             for item in raw_interruptions
         ]
         return cls(
-            session_id=data["session_id"],
+            session_id=data.get("session_id", ""),
             title=data.get("title", "Focus Session"),
             target_minutes=int(data.get("target_minutes", 25)),
             task_id=data.get("task_id"),
@@ -103,7 +103,7 @@ class TaskItem:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskItem":
         return cls(
-            task_id=data["task_id"],
+            task_id=data.get("task_id", ""),
             title=data.get("title", ""),
             status=data.get("status", TaskStatus.PENDING),
             estimated_minutes=int(data.get("estimated_minutes", 25)),

@@ -3,6 +3,7 @@
 import shutil
 import tempfile
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from chronos.models import SessionState, TaskItem, TaskStatus
@@ -66,10 +67,30 @@ class TestSessionOrchestrator(unittest.TestCase):
         updated_task = self.repo.get_task("t-99")
         self.assertEqual(updated_task.status, TaskStatus.IN_PROGRESS)
 
-        # Finish session
+        # Finish session after a known active stretch
+        self._age_active_session(600)
         self.orchestrator.finish_session()
         updated_task_after = self.repo.get_task("t-99")
-        self.assertGreaterEqual(updated_task_after.spent_seconds, 0)
+        self.assertGreaterEqual(updated_task_after.spent_seconds, 600)
+
+    def test_abort_accumulates_active_elapsed_time(self):
+        session = self.orchestrator.start_session("Abandoned experiment")
+        self._age_active_session(600)
+
+        aborted = self.orchestrator.abort_session(reason="context switch")
+
+        self.assertEqual(aborted.state, SessionState.ABORTED)
+        self.assertGreaterEqual(aborted.elapsed_seconds, 600)
+        history = self.repo.list_sessions()
+        self.assertEqual(history[0].elapsed_seconds, aborted.elapsed_seconds)
+
+    def _age_active_session(self, seconds: int) -> None:
+        """Backdate the active session's last resume so elapsed time is deterministic."""
+        raw = self.storage.load_active_session()
+        raw["last_resumed_at"] = (
+            datetime.now(timezone.utc) - timedelta(seconds=seconds)
+        ).isoformat()
+        self.storage.save_active_session(raw)
 
 
 if __name__ == "__main__":

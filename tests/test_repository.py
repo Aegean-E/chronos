@@ -47,6 +47,28 @@ class TestRepository(unittest.TestCase):
         self.repo.save_task(task)
         self.assertEqual(self.repo.get_task("t1").status, TaskStatus.DONE)
 
+    def test_list_sessions_skips_rows_missing_an_id(self):
+        valid = Session(session_id="s1", title="Deep Work", target_minutes=25)
+        self.engine.write_json_atomic(
+            self.engine.history_path,
+            [valid.to_dict(), {"title": "row without an id"}],
+        )
+
+        sessions = self.repo.list_sessions()
+
+        self.assertEqual([s.session_id for s in sessions], ["s1"])
+
+    def test_list_tasks_skips_rows_missing_an_id(self):
+        valid = TaskItem(task_id="t1", title="Write tests")
+        self.engine.write_json_atomic(
+            self.engine.tasks_path,
+            [{"title": "row without an id"}, valid.to_dict()],
+        )
+
+        tasks = self.repo.list_tasks()
+
+        self.assertEqual([t.task_id for t in tasks], ["t1"])
+
 
 if __name__ == "__main__":
     unittest.main()

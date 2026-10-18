@@ -3,6 +3,7 @@
 import json
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -19,33 +20,34 @@ class StorageEngine:
         self.tasks_path = self.base_dir / "tasks.json"
 
     def write_json_atomic(self, path: Path, data: Any) -> None:
-        """Write data to path atomically using temp file, fsync, and replace."""
+        """Write data to path atomically using a unique temp file, fsync, and replace."""
         path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = path.parent / f".tmp_{path.name}_{int(time.time() * 1000)}"
         backup_path = path.with_suffix(path.suffix + ".bak")
 
         payload = json.dumps(data, indent=2, ensure_ascii=False)
-        with open(temp_path, "w", encoding="utf-8") as f:
-            f.write(payload)
-            f.flush()
-            os.fsync(f.fileno())
+        fd, temp_name = tempfile.mkstemp(dir=path.parent, prefix=f".tmp_{path.name}_")
+        temp_path = Path(temp_name)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(payload)
+                f.flush()
+                os.fsync(f.fileno())
 
-        if path.exists():
-            shutil.copy2(path, backup_path)
+            if path.exists():
+                shutil.copy2(path, backup_path)
 
-        last_error = None
-        for _ in range(5):
-            try:
-                os.replace(temp_path, path)
-                return
-            except OSError as exc:
-                last_error = exc
-                time.sleep(0.02)
-
-        if temp_path.exists():
+            last_error = None
+            for _ in range(5):
+                try:
+                    os.replace(temp_path, path)
+                    return
+                except OSError as exc:
+                    last_error = exc
+                    time.sleep(0.02)
+            if last_error:
+                raise last_error
+        finally:
             temp_path.unlink(missing_ok=True)
-        if last_error:
-            raise last_error
 
     def read_json_safe(self, path: Path, default: Any) -> Any:
         """Read JSON from path, recovering from backup or quarantining if corrupt."""

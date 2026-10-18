@@ -4,7 +4,7 @@ Chronos is a lightweight, local-first developer focus and session orchestrator. 
 
 ## ⚡ 30-Second Cold-Start Quick Reference
 
-- **Runtime Prerequisites**: git and Python 3.10+ (AIKit's gates); add this project's own.
+- **Runtime Prerequisites**: Python 3.10+ (standard library only; zero third-party packages required).
 - **Canonical Regression Shield Gate**:
   ```bash
   python aikit.py check chronos
