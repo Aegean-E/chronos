@@ -66,6 +66,29 @@ class TestAnalytics(unittest.TestCase):
 
         self.assertEqual(metrics["total_sessions"], 0)
 
+    def test_streak_spans_more_days_than_the_window(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session(f"day-{i}", (now - timedelta(days=i)).isoformat())
+            for i in range(10)
+        ]
+
+        metrics = compute_metrics(sessions, days_window=7)
+
+        self.assertEqual(metrics["total_sessions"], 7)
+        self.assertEqual(metrics["current_streak_days"], 10)
+
+    def test_streak_ignores_future_dated_sessions(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session("future", (now + timedelta(days=2)).isoformat()),
+            self._completed_session("today", now.isoformat()),
+        ]
+
+        metrics = compute_metrics(sessions, days_window=7)
+
+        self.assertEqual(metrics["current_streak_days"], 1)
+
     def _completed_session(self, session_id: str, started_at: str, elapsed_seconds: int = 600) -> Session:
         return Session(
             session_id=session_id,

@@ -54,6 +54,50 @@ class TestModels(unittest.TestCase):
         self.assertEqual(restored.estimated_minutes, 30)
         self.assertEqual(restored.spent_seconds, 900)
 
+    def test_session_from_dict_coerces_malformed_numbers(self):
+        restored = Session.from_dict({
+            "session_id": "s1",
+            "title": "t",
+            "target_minutes": "abc",
+            "elapsed_seconds": None,
+        })
+
+        self.assertEqual(restored.target_minutes, 25)
+        self.assertEqual(restored.elapsed_seconds, 0)
+
+    def test_session_from_dict_skips_malformed_interruptions(self):
+        restored = Session.from_dict({
+            "session_id": "s1",
+            "title": "t",
+            "interruptions": ["oops", None, {"reason": "real", "duration_seconds": "90"}],
+        })
+
+        self.assertEqual(len(restored.interruptions), 1)
+        self.assertEqual(restored.interruptions[0].reason, "real")
+        self.assertEqual(restored.interruptions[0].duration_seconds, 90)
+
+    def test_session_from_dict_tolerates_non_list_interruptions(self):
+        restored = Session.from_dict({
+            "session_id": "s1",
+            "title": "t",
+            "interruptions": {"reason": "not a list"},
+        })
+
+        self.assertEqual(restored.interruptions, [])
+
+    def test_interruption_and_task_from_dict_coerce_malformed_numbers(self):
+        interruption = Interruption.from_dict({"reason": "x", "duration_seconds": None})
+        task = TaskItem.from_dict({
+            "task_id": "t1",
+            "title": "x",
+            "estimated_minutes": None,
+            "spent_seconds": "oops",
+        })
+
+        self.assertEqual(interruption.duration_seconds, 0)
+        self.assertEqual(task.estimated_minutes, 25)
+        self.assertEqual(task.spent_seconds, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

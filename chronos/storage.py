@@ -6,7 +6,9 @@ import shutil
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
+
+_UNREADABLE = object()
 
 
 class StorageEngine:
@@ -50,27 +52,42 @@ class StorageEngine:
             temp_path.unlink(missing_ok=True)
 
     def read_json_safe(self, path: Path, default: Any) -> Any:
-        """Read JSON from path, recovering from backup or quarantining if corrupt."""
-        if not path.exists():
-            return default
+        """Read JSON from path, recovering from backup or quarantining corrupt content."""
         try:
             with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            backup_path = path.with_suffix(path.suffix + ".bak")
-            if backup_path.exists():
-                try:
-                    with open(backup_path, "r", encoding="utf-8") as bf:
-                        return json.load(bf)
-                except (json.JSONDecodeError, OSError):
-                    pass
-            # Quarantine corrupt file
-            corrupt_dest = path.parent / f".corrupt_{path.name}_{int(time.time())}"
-            try:
-                os.replace(path, corrupt_dest)
-            except OSError:
-                pass
+        except FileNotFoundError:
             return default
+        except ValueError:
+            # Malformed JSON or invalid text encoding: try the backup, then quarantine.
+            recovered = self._read_backup(path)
+            if recovered is not _UNREADABLE:
+                return recovered
+            self._quarantine(path)
+            return default
+        except OSError:
+            # Unreadable for I/O reasons (lock, permissions); never move the file.
+            recovered = self._read_backup(path)
+            return default if recovered is _UNREADABLE else recovered
+
+    def _read_backup(self, path: Path) -> Any:
+        """Return parsed backup data, or _UNREADABLE when no readable backup exists."""
+        backup_path = path.with_suffix(path.suffix + ".bak")
+        if not backup_path.exists():
+            return _UNREADABLE
+        try:
+            with open(backup_path, "r", encoding="utf-8") as bf:
+                return json.load(bf)
+        except (ValueError, OSError):
+            return _UNREADABLE
+
+    def _quarantine(self, path: Path) -> None:
+        """Move an unreadable-content file aside so it cannot disable the CLI."""
+        corrupt_dest = path.parent / f".corrupt_{path.name}_{int(time.time())}"
+        try:
+            os.replace(path, corrupt_dest)
+        except OSError:
+            pass
 
     def save_active_session(self, session_data: Optional[Dict[str, Any]]) -> None:
         """Persist or clear the currently active focus session."""

@@ -2,7 +2,9 @@
 
 import io
 import json
+import re
 import shutil
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -93,6 +95,50 @@ class TestCLIIntegration(unittest.TestCase):
         code, out, _ = self.run_cli("status")
         self.assertEqual(code, 0)
         self.assertIn("No active focus session", out)
+
+    def test_commands_survive_legacy_encoded_stdout(self):
+        buffer = io.BytesIO()
+        wrapper = io.TextIOWrapper(buffer, encoding="cp1252")
+        original = sys.stdout
+        sys.stdout = wrapper
+        try:
+            code = main(["--data-dir", str(self.temp_dir), "task", "add", "Legacy console"])
+            wrapper.flush()
+        finally:
+            sys.stdout = original
+
+        self.assertEqual(code, 0)
+        self.assertIn("Legacy console", buffer.getvalue().decode("utf-8"))
+
+    def test_invalid_usage_arguments_report_exit_code_2(self):
+        cases = [
+            ["stats", "--days", "0"],
+            ["stats", "--days", "-3"],
+            ["start", "title", "--duration", "0"],
+            ["task", "add", "title", "--estimate", "0"],
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                stderr_buf = io.StringIO()
+                with redirect_stderr(stderr_buf), self.assertRaises(SystemExit) as raised:
+                    main(["--data-dir", str(self.temp_dir)] + case)
+                self.assertEqual(raised.exception.code, 2)
+
+    def test_task_done_is_idempotent(self):
+        code, out, _ = self.run_cli("task", "add", "Finish me once")
+        self.assertEqual(code, 0)
+        task_id = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        self.assertEqual(self.run_cli("task", "done", task_id)[0], 0)
+        tasks_path = self.temp_dir / "tasks.json"
+        first_completed_at = json.loads(tasks_path.read_text(encoding="utf-8"))[0]["completed_at"]
+
+        code, out, _ = self.run_cli("task", "done", task_id)
+
+        self.assertEqual(code, 0)
+        self.assertIn("already", out)
+        after_completed_at = json.loads(tasks_path.read_text(encoding="utf-8"))[0]["completed_at"]
+        self.assertEqual(after_completed_at, first_completed_at)
 
 
 if __name__ == "__main__":

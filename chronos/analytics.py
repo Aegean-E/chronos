@@ -4,27 +4,16 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
-from chronos.models import Session, SessionState
-
-
-def parse_date(iso_str: str) -> datetime:
-    """Parse an ISO date string into a UTC-aware datetime; naive input is read as UTC."""
-    try:
-        parsed = datetime.fromisoformat(iso_str)
-    except (ValueError, TypeError):
-        return datetime.now(timezone.utc)
-    if parsed.tzinfo is None:
-        return parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+from chronos.models import Session, SessionState, parse_iso
 
 
 def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, Any]:
-    """Calculate focus metrics over a given historical window."""
+    """Calculate focus metrics over the elapsed window; the streak spans all history given."""
     now = datetime.now(timezone.utc)
     window = timedelta(days=days_window)
     filtered = []
     for s in sessions:
-        age = now - parse_date(s.started_at)
+        age = now - parse_iso(s.started_at)
         if timedelta(0) <= age <= window:
             filtered.append(s)
 
@@ -39,11 +28,15 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
     for s in filtered:
         tags[s.tag] += s.elapsed_seconds
 
-    # Streak calculation
+    # Streak calculation: consecutive days ending today or yesterday, computed over every
+    # completed session in the provided history so the count is never clipped by the window.
     active_dates = set()
-    for s in completed_sessions:
-        dt = parse_date(s.started_at)
-        active_dates.add(dt.strftime("%Y-%m-%d"))
+    for s in sessions:
+        if s.state != SessionState.COMPLETED:
+            continue
+        started = parse_iso(s.started_at)
+        if started <= now:
+            active_dates.add(started.strftime("%Y-%m-%d"))
 
     streak = 0
     today = now.strftime("%Y-%m-%d")

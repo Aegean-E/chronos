@@ -3,15 +3,43 @@
 import argparse
 import json
 import sys
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
 from chronos.analytics import compute_metrics
-from chronos.models import SessionState, TaskItem, TaskStatus
+from chronos.models import SessionState, TaskItem, TaskStatus, now_iso, parse_iso
 from chronos.orchestrator import SessionOrchestrator
 from chronos.repository import Repository
 from chronos.storage import StorageEngine
+
+
+def _configure_output_encoding() -> None:
+    """Keep emoji output from crashing when the terminal cannot encode it.
+
+    Windows pipes and redirected files fall back to a legacy code page; writing
+    UTF-8 with replacement characters beats a UnicodeEncodeError traceback.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            pass
+
+
+def _positive_int(value: str) -> int:
+    """Argparse type: an integer of at least 1."""
+    try:
+        parsed = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected an integer, got '{value}'")
+    if parsed < 1:
+        raise argparse.ArgumentTypeError(f"expected a positive integer, got '{value}'")
+    return parsed
 
 
 def get_default_data_dir() -> Path:
@@ -114,12 +142,8 @@ def cmd_status(args: argparse.Namespace, orchestrator: SessionOrchestrator) -> i
 
     elapsed = session.elapsed_seconds
     if session.state == SessionState.ACTIVE and session.last_resumed_at:
-        try:
-            now_dt = datetime.now(timezone.utc)
-            last_resumed = datetime.fromisoformat(session.last_resumed_at)
-            elapsed += max(0, int((now_dt - last_resumed).total_seconds()))
-        except (ValueError, TypeError):
-            pass
+        now_dt = datetime.now(timezone.utc)
+        elapsed += max(0, int((now_dt - parse_iso(session.last_resumed_at)).total_seconds()))
 
     if args.json:
         data = session.to_dict()
@@ -171,7 +195,6 @@ def cmd_stats(args: argparse.Namespace, repository: Repository) -> int:
 
 def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
     if args.task_command == "add":
-        import uuid
         task_id = f"task_{uuid.uuid4().hex[:6]}"
         task = TaskItem(
             task_id=task_id,
@@ -200,8 +223,11 @@ def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
         if not task:
             print(f"Error: Task '{args.task_id}' not found.", file=sys.stderr)
             return 1
+        if task.status == TaskStatus.DONE:
+            print(f"Task '{task.title}' is already done.")
+            return 0
         task.status = TaskStatus.DONE
-        task.completed_at = datetime.now(timezone.utc).isoformat()
+        task.completed_at = now_iso()
         repository.save_task(task)
         print(f"🎉 Marked task '{task.title}' as done!")
         return 0
@@ -217,7 +243,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     start_p = subparsers.add_parser("start", help="Start a new focus session")
     start_p.add_argument("title", help="Title or focus goal")
-    start_p.add_argument("--duration", "-d", type=int, default=25, help="Target duration in minutes (default: 25)")
+    start_p.add_argument("--duration", "-d", type=_positive_int, default=25, help="Target duration in minutes (default: 25)")
     start_p.add_argument("--tag", "-t", default="general", help="Tag category (e.g. coding, debug, review)")
     start_p.add_argument("--task", default=None, help="Optional task ID to bind this session to")
 
@@ -238,14 +264,14 @@ def build_parser() -> argparse.ArgumentParser:
     status_p.add_argument("--json", action="store_true", help="Output JSON format")
 
     stats_p = subparsers.add_parser("stats", help="Display focus metrics and streak")
-    stats_p.add_argument("--days", type=int, default=7, help="Lookback window in days (default: 7)")
+    stats_p.add_argument("--days", type=_positive_int, default=7, help="Lookback window in days (default: 7)")
     stats_p.add_argument("--json", action="store_true", help="Output JSON format")
 
     task_p = subparsers.add_parser("task", help="Task micro-milestone manager")
     task_subs = task_p.add_subparsers(dest="task_command")
     task_add = task_subs.add_parser("add", help="Add a task")
     task_add.add_argument("title", help="Task title")
-    task_add.add_argument("--estimate", "-e", type=int, default=25, help="Estimated minutes")
+    task_add.add_argument("--estimate", "-e", type=_positive_int, default=25, help="Estimated minutes")
 
     task_subs.add_parser("list", help="List all tasks")
 
@@ -256,6 +282,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    _configure_output_encoding()
     parser = build_parser()
     args = parser.parse_args(argv)
 

@@ -69,6 +69,22 @@ class TestRepository(unittest.TestCase):
 
         self.assertEqual([t.task_id for t in tasks], ["t1"])
 
+    def test_list_sessions_tolerates_malformed_rows(self):
+        self.engine.write_json_atomic(
+            self.engine.history_path,
+            [{"session_id": "s1", "title": "t", "target_minutes": "abc", "interruptions": ["oops"]}],
+        )
+
+        sessions = self.repo.list_sessions()
+
+        self.assertEqual(len(sessions), 1)
+        self.assertEqual(sessions[0].target_minutes, 25)
+        self.assertEqual(sessions[0].interruptions, [])
+
+        # Rewriting history must not crash on the tolerated row.
+        self.repo.append_session(Session(session_id="s2", title="Clean", target_minutes=25))
+        self.assertEqual(len(self.repo.list_sessions()), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

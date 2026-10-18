@@ -47,6 +47,25 @@ class TestStorageEngine(unittest.TestCase):
         self.engine.save_active_session(None)
         self.assertIsNone(self.engine.load_active_session())
 
+    def test_read_json_safe_survives_invalid_utf8_bytes(self):
+        target = self.temp_dir / "history.json"
+        target.write_bytes(b"\xff\xfe\x00garbage")
+
+        recovered = self.engine.read_json_safe(target, default=[])
+
+        self.assertEqual(recovered, [])
+        self.assertFalse(target.exists())
+        self.assertTrue(any(self.temp_dir.glob(".corrupt_*")))
+
+    def test_read_json_safe_does_not_move_file_on_oserror(self):
+        target = self.temp_dir / "unreadable.json"
+        target.mkdir()
+
+        recovered = self.engine.read_json_safe(target, default=[])
+
+        self.assertEqual(recovered, [])
+        self.assertTrue(target.is_dir())
+
 
 if __name__ == "__main__":
     unittest.main()

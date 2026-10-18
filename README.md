@@ -72,7 +72,7 @@ python -m chronos.cli task done <task_id>
 ### 3. Productivity Insights & Streaks
 
 ```bash
-# View summary metrics for the past 7 days
+# View summary metrics for the past 7 days (streak spans full history)
 python -m chronos.cli stats
 
 # Export metrics as JSON for integration
@@ -83,6 +83,7 @@ python -m chronos.cli stats --json
 
 - **Zero Undeclared Dependencies**: Built exclusively on Python 3 standard library (`argparse`, `json`, `pathlib`, `dataclasses`, `datetime`).
 - **Crash Resilience**: State writes use atomic temp files with `fsync` and atomic `os.replace` to prevent corrupted state on sudden termination.
+- **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined and recovered from the atomic backup.
 - **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
 
 

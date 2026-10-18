@@ -84,12 +84,40 @@ class TestSessionOrchestrator(unittest.TestCase):
         history = self.repo.list_sessions()
         self.assertEqual(history[0].elapsed_seconds, aborted.elapsed_seconds)
 
-    def _age_active_session(self, seconds: int) -> None:
+    def test_naive_last_resumed_at_is_read_as_utc(self):
+        self.orchestrator.start_session("Legacy timestamps")
+        self._age_active_session(600, aware=False)
+
+        paused = self.orchestrator.pause_session()
+
+        self.assertGreaterEqual(paused.elapsed_seconds, 600)
+
+    def test_garbage_last_resumed_at_does_not_crash_finish(self):
+        self.orchestrator.start_session("Garbage timestamps")
+        raw = self.storage.load_active_session()
+        raw["last_resumed_at"] = "not-a-date"
+        self.storage.save_active_session(raw)
+
+        finished = self.orchestrator.finish_session()
+
+        self.assertEqual(finished.state, SessionState.COMPLETED)
+        self.assertEqual(finished.elapsed_seconds, 0)
+
+    def test_abort_credits_bound_task_spent_time(self):
+        task = TaskItem(task_id="t-77", title="Aborted work")
+        self.repo.save_task(task)
+        self.orchestrator.start_session("Doomed", task_id="t-77")
+        self._age_active_session(600)
+
+        self.orchestrator.abort_session(reason="context switch")
+
+        self.assertGreaterEqual(self.repo.get_task("t-77").spent_seconds, 600)
+
+    def _age_active_session(self, seconds: int, aware: bool = True) -> None:
         """Backdate the active session's last resume so elapsed time is deterministic."""
         raw = self.storage.load_active_session()
-        raw["last_resumed_at"] = (
-            datetime.now(timezone.utc) - timedelta(seconds=seconds)
-        ).isoformat()
+        aged = datetime.now(timezone.utc) - timedelta(seconds=seconds)
+        raw["last_resumed_at"] = aged.isoformat() if aware else aged.replace(tzinfo=None).isoformat()
         self.storage.save_active_session(raw)
 
 

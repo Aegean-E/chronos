@@ -1,11 +1,10 @@
 """Session orchestrator managing session lifecycle, state transitions, and task binding."""
 
-import time
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from chronos.models import Interruption, Session, SessionState, TaskStatus, now_iso
+from chronos.models import Interruption, Session, SessionState, TaskStatus, now_iso, parse_iso
 from chronos.repository import Repository
 from chronos.storage import StorageEngine
 
@@ -25,13 +24,25 @@ class SessionOrchestrator:
         return Session.from_dict(raw)
 
     def _accumulate_active_segment(self, session: Session) -> None:
-        """Add the seconds since the last resume to the session's running total."""
+        """Add the seconds since the last resume to the session's running total.
+
+        Naive timestamps are read as UTC and malformed ones contribute zero, so a
+        hand-edited state file can never crash a lifecycle command.
+        """
         if session.state != SessionState.ACTIVE or not session.last_resumed_at:
             return
         now_dt = datetime.now(timezone.utc)
-        resumed_dt = datetime.fromisoformat(session.last_resumed_at)
-        delta = int((now_dt - resumed_dt).total_seconds())
+        delta = int((now_dt - parse_iso(session.last_resumed_at)).total_seconds())
         session.elapsed_seconds += max(0, delta)
+
+    def _credit_bound_task(self, session: Session) -> None:
+        """Add the session's measured focus time to its bound task, if any."""
+        if not session.task_id:
+            return
+        task = self.repository.get_task(session.task_id)
+        if task:
+            task.spent_seconds += session.elapsed_seconds
+            self.repository.save_task(task)
 
     def start_session(
         self,
@@ -120,11 +131,7 @@ class SessionOrchestrator:
         self.storage.save_active_session(None)
 
         # Update task spent time if linked
-        if session.task_id:
-            task = self.repository.get_task(session.task_id)
-            if task:
-                task.spent_seconds += session.elapsed_seconds
-                self.repository.save_task(task)
+        self._credit_bound_task(session)
 
         return session
 
@@ -143,4 +150,7 @@ class SessionOrchestrator:
 
         self.repository.append_session(session)
         self.storage.save_active_session(None)
+
+        # Aborted sessions keep their measured focus time, so credit it like finish.
+        self._credit_bound_task(session)
         return session

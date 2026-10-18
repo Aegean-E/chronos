@@ -23,6 +23,44 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def parse_iso(value: Optional[str]) -> datetime:
+    """Parse an ISO-8601 timestamp into a UTC-aware datetime.
+
+    Naive input is read as UTC; missing or malformed input yields the current time.
+    """
+    try:
+        parsed = datetime.fromisoformat(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return datetime.now(timezone.utc)
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _as_int(value: Any, default: int) -> int:
+    """Coerce a stored value to int, falling back to default when malformed."""
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _as_text(value: Any, default: str = "") -> str:
+    """Coerce a stored value to a non-empty string, falling back to default."""
+    if isinstance(value, str):
+        return value or default
+    if value is None:
+        return default
+    return str(value)
+
+
+def _as_optional_text(value: Any) -> Optional[str]:
+    """Coerce a stored value to a string, or None when absent or empty."""
+    if value is None:
+        return None
+    return str(value) or None
+
+
 @dataclass
 class Interruption:
     """An interruption that occurred during a focus session."""
@@ -36,9 +74,9 @@ class Interruption:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Interruption":
         return cls(
-            reason=data.get("reason", "Unknown"),
-            started_at=data.get("started_at", now_iso()),
-            duration_seconds=int(data.get("duration_seconds", 0)),
+            reason=_as_text(data.get("reason"), "Unknown"),
+            started_at=_as_text(data.get("started_at"), now_iso()),
+            duration_seconds=_as_int(data.get("duration_seconds"), 0),
         )
 
 
@@ -65,24 +103,25 @@ class Session:
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Session":
-        raw_interruptions = data.get("interruptions", [])
+        raw_interruptions = data.get("interruptions")
+        if not isinstance(raw_interruptions, list):
+            raw_interruptions = []
         interruptions = [
-            Interruption.from_dict(item) if isinstance(item, dict) else item
-            for item in raw_interruptions
+            Interruption.from_dict(item) for item in raw_interruptions if isinstance(item, dict)
         ]
         return cls(
-            session_id=data.get("session_id", ""),
-            title=data.get("title", "Focus Session"),
-            target_minutes=int(data.get("target_minutes", 25)),
-            task_id=data.get("task_id"),
-            tag=data.get("tag", "general"),
-            state=data.get("state", SessionState.ACTIVE),
-            started_at=data.get("started_at", now_iso()),
-            ended_at=data.get("ended_at"),
-            elapsed_seconds=int(data.get("elapsed_seconds", 0)),
-            last_resumed_at=data.get("last_resumed_at"),
+            session_id=_as_text(data.get("session_id")),
+            title=_as_text(data.get("title"), "Focus Session"),
+            target_minutes=_as_int(data.get("target_minutes"), 25),
+            task_id=_as_optional_text(data.get("task_id")),
+            tag=_as_text(data.get("tag"), "general"),
+            state=_as_text(data.get("state"), SessionState.ACTIVE),
+            started_at=_as_text(data.get("started_at"), now_iso()),
+            ended_at=_as_optional_text(data.get("ended_at")),
+            elapsed_seconds=_as_int(data.get("elapsed_seconds"), 0),
+            last_resumed_at=_as_optional_text(data.get("last_resumed_at")),
             interruptions=interruptions,
-            notes=data.get("notes", ""),
+            notes=_as_text(data.get("notes")),
         )
 
 
@@ -103,11 +142,11 @@ class TaskItem:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskItem":
         return cls(
-            task_id=data.get("task_id", ""),
-            title=data.get("title", ""),
-            status=data.get("status", TaskStatus.PENDING),
-            estimated_minutes=int(data.get("estimated_minutes", 25)),
-            spent_seconds=int(data.get("spent_seconds", 0)),
-            created_at=data.get("created_at", now_iso()),
-            completed_at=data.get("completed_at"),
+            task_id=_as_text(data.get("task_id")),
+            title=_as_text(data.get("title")),
+            status=_as_text(data.get("status"), TaskStatus.PENDING),
+            estimated_minutes=_as_int(data.get("estimated_minutes"), 25),
+            spent_seconds=_as_int(data.get("spent_seconds"), 0),
+            created_at=_as_text(data.get("created_at"), now_iso()),
+            completed_at=_as_optional_text(data.get("completed_at")),
         )
