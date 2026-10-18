@@ -8,8 +8,8 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `15`
 - **Total Classes**: `15`
-- **Total Functions / Methods**: `21`
-- **Total Source Lines**: `1511`
+- **Total Functions / Methods**: `24`
+- **Total Source Lines**: `1779`
 
 ---
 
@@ -25,7 +25,7 @@
 ### [`chronos/analytics.py`](chronos/analytics.py)
 > *Productivity metrics, streak tracking, and focus analytics.*
 
-**Size**: `72` lines (`2928` bytes)
+**Size**: `79` lines (`3246` bytes)
 
 **Functions:**
 - `def compute_metrics(sessions, days_window)` - *Calculate focus metrics over the elapsed window; the streak spans all history given.*
@@ -35,11 +35,12 @@
 ### [`chronos/cli.py`](chronos/cli.py)
 > *Command-line interface for Chronos.*
 
-**Size**: `321` lines (`13597` bytes)
+**Size**: `347` lines (`14602` bytes)
 
 **Functions:**
 - `def _configure_output_encoding()` - *Keep emoji output from crashing when the terminal cannot encode it.*
 - `def _positive_int(value)` - *Argparse type: an integer of at least 1.*
+- `def _non_negative_int(value)` - *Argparse type: an integer of at least 0.*
 - `def get_default_data_dir()` - *Return local .chronos or fallback directory.*
 - `def format_progress_bar(elapsed_seconds, target_minutes, width)` - *Render a terminal progress bar.*
 - `def cmd_start(args, orchestrator)`
@@ -50,6 +51,7 @@
 - `def cmd_abort(args, orchestrator)`
 - `def cmd_status(args, orchestrator)`
 - `def cmd_stats(args, repository)`
+- `def _unique_task_id(repository)` - *Generate a task id that cannot overwrite an existing task.*
 - `def cmd_task(args, repository)`
 - `def build_parser()`
 - `def main(argv)`
@@ -59,7 +61,7 @@
 ### [`chronos/models.py`](chronos/models.py)
 > *Domain models for Chronos focus sessions, tasks, and interruptions.*
 
-**Size**: `152` lines (`4990` bytes)
+**Size**: `168` lines (`5659` bytes)
 
 **Classes:**
 - `class SessionState`
@@ -76,8 +78,9 @@
 
 **Functions:**
 - `def now_iso()` - *Return the current UTC timestamp in ISO-8601 format.*
+- `def try_parse_iso(value)` - *Parse an ISO-8601 timestamp into a UTC-aware datetime, or None when malformed.*
 - `def parse_iso(value)` - *Parse an ISO-8601 timestamp into a UTC-aware datetime.*
-- `def _as_int(value, default)` - *Coerce a stored value to int, falling back to default when malformed.*
+- `def _as_int(value, default, minimum)` - *Coerce a stored value to int, falling back to default when malformed.*
 - `def _as_text(value, default)` - *Coerce a stored value to a non-empty string, falling back to default.*
 - `def _as_optional_text(value)` - *Coerce a stored value to a string, or None when absent or empty.*
 
@@ -86,7 +89,7 @@
 ### [`chronos/orchestrator.py`](chronos/orchestrator.py)
 > *Session orchestrator managing session lifecycle, state transitions, and task binding.*
 
-**Size**: `156` lines (`5853` bytes)
+**Size**: `189` lines (`7353` bytes)
 
 **Classes:**
 - `class SessionOrchestrator` - *Coordinates active session transitions and historical archiving.*
@@ -122,12 +125,13 @@
 ### [`chronos/storage.py`](chronos/storage.py)
 > *Crash-resilient, atomic JSON storage engine for Chronos.*
 
-**Size**: `102` lines (`3900` bytes)
+**Size**: `125` lines (`4889` bytes)
 
 **Classes:**
 - `class StorageEngine` - *Manages disk persistence for sessions and tasks with atomic writes.*
   - Method `.__init__(base_dir)`
   - Method `.write_json_atomic(path, data)` - *Write data to path atomically using a unique temp file, fsync, and replace.*
+  - Method `._fsync_directory(directory)` - *Flush the directory entry on POSIX so a rename survives power loss.*
   - Method `.read_json_safe(path, default)` - *Read JSON from path, recovering from backup or quarantining corrupt content.*
   - Method `._read_backup(path)` - *Return parsed backup data, or _UNREADABLE when no readable backup exists.*
   - Method `._quarantine(path)` - *Move an unreadable-content file aside so it cannot disable the CLI.*
@@ -146,7 +150,7 @@
 ### [`tests/test_analytics.py`](tests/test_analytics.py)
 > *Unit tests for Chronos metrics and analytics.*
 
-**Size**: `104` lines (`3941` bytes)
+**Size**: `119` lines (`4563` bytes)
 
 **Classes:**
 - `class TestAnalytics`
@@ -157,6 +161,7 @@
   - Method `.test_future_dated_rows_are_ignored()`
   - Method `.test_streak_spans_more_days_than_the_window()`
   - Method `.test_streak_ignores_future_dated_sessions()`
+  - Method `.test_malformed_timestamps_are_skipped_deterministically()`
   - Method `._completed_session(session_id, started_at, elapsed_seconds)`
 
 ---
@@ -164,7 +169,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *Integration tests for Chronos CLI commands.*
 
-**Size**: `145` lines (`5210` bytes)
+**Size**: `198` lines (`7289` bytes)
 
 **Classes:**
 - `class TestCLIIntegration`
@@ -174,6 +179,11 @@
   - Method `.test_abort_session()`
   - Method `.test_commands_survive_legacy_encoded_stdout()`
   - Method `.test_invalid_usage_arguments_report_exit_code_2()`
+  - Method `.test_start_rejects_unknown_task_binding()`
+  - Method `.test_task_add_rejects_empty_title()`
+  - Method `.test_interrupt_rejects_empty_reason()`
+  - Method `.test_task_id_collision_does_not_overwrite_existing_task()`
+  - Method `.test_version_flag()`
   - Method `.test_task_done_is_idempotent()`
 
 ---
@@ -192,7 +202,7 @@
 ### [`tests/test_models.py`](tests/test_models.py)
 > *Unit tests for Chronos domain models.*
 
-**Size**: `103` lines (`3809` bytes)
+**Size**: `146` lines (`5163` bytes)
 
 **Classes:**
 - `class TestModels`
@@ -203,13 +213,16 @@
   - Method `.test_session_from_dict_skips_malformed_interruptions()`
   - Method `.test_session_from_dict_tolerates_non_list_interruptions()`
   - Method `.test_interruption_and_task_from_dict_coerce_malformed_numbers()`
+  - Method `.test_negative_stored_values_are_clamped()`
+  - Method `.test_session_from_dict_leaves_missing_timestamp_empty()`
+  - Method `.test_try_parse_iso_returns_none_for_malformed_and_normalizes_naive()`
 
 ---
 
 ### [`tests/test_orchestrator.py`](tests/test_orchestrator.py)
 > *Unit tests for Chronos session orchestrator.*
 
-**Size**: `125` lines (`5322` bytes)
+**Size**: `168` lines (`7606` bytes)
 
 **Classes:**
 - `class TestSessionOrchestrator`
@@ -223,6 +236,11 @@
   - Method `.test_naive_last_resumed_at_is_read_as_utc()`
   - Method `.test_garbage_last_resumed_at_does_not_crash_finish()`
   - Method `.test_abort_credits_bound_task_spent_time()`
+  - Method `.test_stale_completed_active_state_is_ignored_and_not_recredited()`
+  - Method `.test_non_object_active_state_is_treated_as_no_session()`
+  - Method `.test_start_rejects_unknown_task_binding()`
+  - Method `.test_start_rejects_empty_title_and_non_positive_duration()`
+  - Method `.test_interruption_rejects_invalid_input()`
   - Method `._age_active_session(seconds, aware)` - *Backdate the active session's last resume so elapsed time is deterministic.*
 
 ---
@@ -246,7 +264,7 @@
 ### [`tests/test_storage.py`](tests/test_storage.py)
 > *Unit tests for Chronos atomic storage engine.*
 
-**Size**: `71` lines (`2528` bytes)
+**Size**: `80` lines (`2945` bytes)
 
 **Classes:**
 - `class TestStorageEngine`
@@ -255,6 +273,7 @@
   - Method `.test_backup_and_recovery_on_corrupt_file()`
   - Method `.test_active_session_lifecycle()`
   - Method `.test_read_json_safe_survives_invalid_utf8_bytes()`
+  - Method `.test_repeated_quarantine_does_not_overwrite_earlier_corrupt_file()`
   - Method `.test_read_json_safe_does_not_move_file_on_oserror()`
 
 ---

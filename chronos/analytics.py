@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
-from chronos.models import Session, SessionState, parse_iso
+from chronos.models import Session, SessionState, try_parse_iso
 
 
 def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, Any]:
@@ -13,7 +13,10 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
     window = timedelta(days=days_window)
     filtered = []
     for s in sessions:
-        age = now - parse_iso(s.started_at)
+        started = try_parse_iso(s.started_at)
+        if started is None:
+            continue
+        age = now - started
         if timedelta(0) <= age <= window:
             filtered.append(s)
 
@@ -22,6 +25,9 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
     aborted_sessions = [s for s in filtered if s.state == SessionState.ABORTED]
 
     total_interruptions = sum(len(s.interruptions) for s in filtered)
+    interruption_seconds = sum(
+        interruption.duration_seconds for s in filtered for interruption in s.interruptions
+    )
 
     # Tag distribution
     tags: Dict[str, int] = defaultdict(int)
@@ -34,8 +40,8 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
     for s in sessions:
         if s.state != SessionState.COMPLETED:
             continue
-        started = parse_iso(s.started_at)
-        if started <= now:
+        started = try_parse_iso(s.started_at)
+        if started is not None and started <= now:
             active_dates.add(started.strftime("%Y-%m-%d"))
 
     streak = 0
@@ -67,6 +73,7 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
         "total_focus_minutes": round(total_seconds / 60.0, 1),
         "average_session_minutes": round(avg_minutes, 1),
         "total_interruptions": total_interruptions,
+        "total_interruption_minutes": round(interruption_seconds / 60.0, 1),
         "current_streak_days": streak,
         "tags_minutes": {tag: round(secs / 60.0, 1) for tag, secs in tags.items()},
     }

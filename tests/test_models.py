@@ -1,7 +1,16 @@
 """Unit tests for Chronos domain models."""
 
 import unittest
-from chronos.models import Interruption, Session, SessionState, TaskItem, TaskStatus
+from datetime import timezone
+
+from chronos.models import (
+    Interruption,
+    Session,
+    SessionState,
+    TaskItem,
+    TaskStatus,
+    try_parse_iso,
+)
 
 
 class TestModels(unittest.TestCase):
@@ -97,6 +106,40 @@ class TestModels(unittest.TestCase):
         self.assertEqual(interruption.duration_seconds, 0)
         self.assertEqual(task.estimated_minutes, 25)
         self.assertEqual(task.spent_seconds, 0)
+
+    def test_negative_stored_values_are_clamped(self):
+        session = Session.from_dict({
+            "session_id": "s1",
+            "title": "t",
+            "target_minutes": -5,
+            "elapsed_seconds": -10,
+            "interruptions": [{"reason": "x", "duration_seconds": -30}],
+        })
+        task = TaskItem.from_dict({
+            "task_id": "t1",
+            "title": "x",
+            "estimated_minutes": 0,
+            "spent_seconds": -1,
+        })
+
+        self.assertEqual(session.target_minutes, 1)
+        self.assertEqual(session.elapsed_seconds, 0)
+        self.assertEqual(session.interruptions[0].duration_seconds, 0)
+        self.assertEqual(task.estimated_minutes, 1)
+        self.assertEqual(task.spent_seconds, 0)
+
+    def test_session_from_dict_leaves_missing_timestamp_empty(self):
+        restored = Session.from_dict({"session_id": "s1", "title": "t"})
+
+        self.assertEqual(restored.started_at, "")
+
+    def test_try_parse_iso_returns_none_for_malformed_and_normalizes_naive(self):
+        self.assertIsNone(try_parse_iso("not-a-date"))
+        self.assertIsNone(try_parse_iso(None))
+
+        parsed = try_parse_iso("2026-10-18T12:00:00")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed.tzinfo, timezone.utc)
 
 
 if __name__ == "__main__":

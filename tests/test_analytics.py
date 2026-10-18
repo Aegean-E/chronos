@@ -38,6 +38,7 @@ class TestAnalytics(unittest.TestCase):
         self.assertEqual(metrics["completed_count"], 2)
         self.assertEqual(metrics["total_focus_minutes"], 50.0)
         self.assertEqual(metrics["total_interruptions"], 1)
+        self.assertEqual(metrics["total_interruption_minutes"], 1.0)
         self.assertIn("coding", metrics["tags_minutes"])
         self.assertEqual(metrics["tags_minutes"]["coding"], 30.0)
         self.assertEqual(metrics["tags_minutes"]["design"], 20.0)
@@ -87,6 +88,20 @@ class TestAnalytics(unittest.TestCase):
 
         metrics = compute_metrics(sessions, days_window=7)
 
+        self.assertEqual(metrics["current_streak_days"], 1)
+
+    def test_malformed_timestamps_are_skipped_deterministically(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session("garbage", "not-a-date"),
+            self._completed_session("missing", ""),
+            self._completed_session("today", now.isoformat()),
+        ]
+
+        metrics = compute_metrics(sessions, days_window=7)
+
+        self.assertEqual(metrics["total_sessions"], 1)
+        self.assertEqual(metrics["completed_count"], 1)
         self.assertEqual(metrics["current_streak_days"], 1)
 
     def _completed_session(self, session_id: str, started_at: str, elapsed_seconds: int = 600) -> Session:

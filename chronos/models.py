@@ -23,26 +23,40 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def parse_iso(value: Optional[str]) -> datetime:
-    """Parse an ISO-8601 timestamp into a UTC-aware datetime.
+def try_parse_iso(value: Optional[str]) -> Optional[datetime]:
+    """Parse an ISO-8601 timestamp into a UTC-aware datetime, or None when malformed.
 
-    Naive input is read as UTC; missing or malformed input yields the current time.
+    Naive input is read as UTC so hand-edited timestamps never crash a caller.
     """
+    if not isinstance(value, str):
+        return None
     try:
-        parsed = datetime.fromisoformat(value)  # type: ignore[arg-type]
+        parsed = datetime.fromisoformat(value)
     except (TypeError, ValueError):
-        return datetime.now(timezone.utc)
+        return None
     if parsed.tzinfo is None:
         return parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(timezone.utc)
 
 
-def _as_int(value: Any, default: int) -> int:
+def parse_iso(value: Optional[str]) -> datetime:
+    """Parse an ISO-8601 timestamp into a UTC-aware datetime.
+
+    Naive input is read as UTC; missing or malformed input yields the current time.
+    """
+    parsed = try_parse_iso(value)
+    return parsed if parsed is not None else datetime.now(timezone.utc)
+
+
+def _as_int(value: Any, default: int, minimum: Optional[int] = None) -> int:
     """Coerce a stored value to int, falling back to default when malformed."""
     try:
-        return int(value)
+        result = int(value)
     except (TypeError, ValueError):
-        return default
+        result = default
+    if minimum is not None:
+        result = max(minimum, result)
+    return result
 
 
 def _as_text(value: Any, default: str = "") -> str:
@@ -76,7 +90,7 @@ class Interruption:
         return cls(
             reason=_as_text(data.get("reason"), "Unknown"),
             started_at=_as_text(data.get("started_at"), now_iso()),
-            duration_seconds=_as_int(data.get("duration_seconds"), 0),
+            duration_seconds=_as_int(data.get("duration_seconds"), 0, minimum=0),
         )
 
 
@@ -112,13 +126,15 @@ class Session:
         return cls(
             session_id=_as_text(data.get("session_id")),
             title=_as_text(data.get("title"), "Focus Session"),
-            target_minutes=_as_int(data.get("target_minutes"), 25),
+            target_minutes=_as_int(data.get("target_minutes"), 25, minimum=1),
             task_id=_as_optional_text(data.get("task_id")),
             tag=_as_text(data.get("tag"), "general"),
             state=_as_text(data.get("state"), SessionState.ACTIVE),
-            started_at=_as_text(data.get("started_at"), now_iso()),
+            # A missing timestamp marks a malformed history row; leave it empty so
+            # analytics can skip it instead of counting it as "today".
+            started_at=_as_text(data.get("started_at")),
             ended_at=_as_optional_text(data.get("ended_at")),
-            elapsed_seconds=_as_int(data.get("elapsed_seconds"), 0),
+            elapsed_seconds=_as_int(data.get("elapsed_seconds"), 0, minimum=0),
             last_resumed_at=_as_optional_text(data.get("last_resumed_at")),
             interruptions=interruptions,
             notes=_as_text(data.get("notes")),
@@ -145,8 +161,8 @@ class TaskItem:
             task_id=_as_text(data.get("task_id")),
             title=_as_text(data.get("title")),
             status=_as_text(data.get("status"), TaskStatus.PENDING),
-            estimated_minutes=_as_int(data.get("estimated_minutes"), 25),
-            spent_seconds=_as_int(data.get("spent_seconds"), 0),
+            estimated_minutes=_as_int(data.get("estimated_minutes"), 25, minimum=1),
+            spent_seconds=_as_int(data.get("spent_seconds"), 0, minimum=0),
             created_at=_as_text(data.get("created_at"), now_iso()),
             completed_at=_as_optional_text(data.get("completed_at")),
         )

@@ -1,12 +1,12 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-review-fixes-v2",
+    "task_id": "task-chronos-review-fixes-v3",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792357092.2906992,
-    "completed_at": 1792357101.1587813
+    "updated_at": 1792360521.2106228,
+    "completed_at": 1792360692.2430835
   },
   "checkpoints": [
     {
@@ -143,6 +143,51 @@
       "status": "completed",
       "timestamp": 1792357101.158783,
       "timestamp_str": "2026-10-18 23:58:21"
+    },
+    {
+      "task_id": "task-chronos-review-fixes-v3",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: third adversarial review; harden session lifecycle idempotency, active-state type/state validation, task-binding and interruption validation, deterministic malformed-timestamp handling, and storage quarantine/durability",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792359850.474865,
+      "timestamp_str": "2026-10-19 00:44:10",
+      "impact_assessment": {
+        "why": "Reproduced defects: finishing a stale COMPLETED active session double-credits its bound task; a valid-JSON non-object active file raises AttributeError; start --task silently accepts unknown task IDs; negative interruption durations are stored; malformed timestamps are excluded only by clock-ordering accident; task IDs can collide and overwrite an existing task; quarantine filenames collide within one second",
+        "benefits": "Lifecycle commands become idempotent and cannot double-count task time; corrupt active-state shapes degrade gracefully; typos in task binding fail loudly; invalid durations are rejected with usage exit 2; malformed history rows are skipped deterministically; task IDs cannot overwrite unrelated tasks; no quarantine data loss",
+        "risks": "contract: unknown --task and negative --duration now fail, stale completed active states are ignored; dependency: none added (stdlib only); concurrency: still last-writer-wins, no lock added; state: on-disk JSON schema unchanged",
+        "mitigation": "Failing-first regression tests for every defect, then the minimal fix; full unittest suite and aikit check chronos 4/4 before delivery; ADR-004 records contract changes"
+      }
+    },
+    {
+      "task_id": "task-chronos-review-fixes-v3",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] Failing-first regression tests added (39 -> 54) for stale lifecycle double-credit, non-object active state, unknown task binding, empty title, invalid interruption input, malformed/missing timestamps, negative stored values, task-id collision, quarantine collisions, and --version; then fixed orchestrator, models, analytics, CLI, and storage",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792360505.2637556,
+      "timestamp_str": "2026-10-19 00:55:05"
+    },
+    {
+      "task_id": "task-chronos-review-fixes-v3",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/4] Phase 4 green on working tree: 54/54 tests in 0.7s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-004 recorded; README and codebase map synchronized",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792360521.2106228,
+      "timestamp_str": "2026-10-19 00:55:21"
+    },
+    {
+      "task_id": "task-chronos-review-fixes-v3",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-review-fixes-v3' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792360692.2430844,
+      "timestamp_str": "2026-10-19 00:58:12"
     }
   ]
 }

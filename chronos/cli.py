@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
+from chronos import __version__
 from chronos.analytics import compute_metrics
 from chronos.models import SessionState, TaskItem, TaskStatus, now_iso, parse_iso
 from chronos.orchestrator import SessionOrchestrator
@@ -39,6 +40,17 @@ def _positive_int(value: str) -> int:
         raise argparse.ArgumentTypeError(f"expected an integer, got '{value}'")
     if parsed < 1:
         raise argparse.ArgumentTypeError(f"expected a positive integer, got '{value}'")
+    return parsed
+
+
+def _non_negative_int(value: str) -> int:
+    """Argparse type: an integer of at least 0."""
+    try:
+        parsed = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"expected an integer, got '{value}'")
+    if parsed < 0:
+        raise argparse.ArgumentTypeError(f"expected a non-negative integer, got '{value}'")
     return parsed
 
 
@@ -185,6 +197,7 @@ def cmd_stats(args: argparse.Namespace, repository: Repository) -> int:
     print(f"🎯 Completed Sessions:   {metrics['completed_count']} / {metrics['total_sessions']}")
     print(f"⚡ Total Interruptions:  {metrics['total_interruptions']}")
     print(f"📈 Average Duration:     {metrics['average_session_minutes']} minutes")
+    print(f"⏸️  Interruption Time:    {metrics['total_interruption_minutes']} minutes")
     if metrics["tags_minutes"]:
         print("🏷️  Tag Breakdown:")
         for tag, m in metrics["tags_minutes"].items():
@@ -193,12 +206,24 @@ def cmd_stats(args: argparse.Namespace, repository: Repository) -> int:
     return 0
 
 
+def _unique_task_id(repository: Repository) -> str:
+    """Generate a task id that cannot overwrite an existing task."""
+    while True:
+        candidate = f"task_{uuid.uuid4().hex[:6]}"
+        if repository.get_task(candidate) is None:
+            return candidate
+
+
 def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
     if args.task_command == "add":
-        task_id = f"task_{uuid.uuid4().hex[:6]}"
+        title = args.title.strip()
+        if not title:
+            print("Error: Task title cannot be empty.", file=sys.stderr)
+            return 1
+        task_id = _unique_task_id(repository)
         task = TaskItem(
             task_id=task_id,
-            title=args.title,
+            title=title,
             estimated_minutes=args.estimate,
         )
         repository.save_task(task)
@@ -238,6 +263,7 @@ def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="chronos", description="Lightweight developer focus & session orchestrator")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--data-dir", type=Path, default=None, help="Directory to store Chronos session data")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -252,7 +278,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     interrupt_p = subparsers.add_parser("interrupt", help="Log an interruption")
     interrupt_p.add_argument("reason", help="Cause of interruption (e.g. Slack, call, meeting)")
-    interrupt_p.add_argument("--duration", type=int, default=0, help="Duration in seconds")
+    interrupt_p.add_argument("--duration", type=_non_negative_int, default=0, help="Duration in seconds")
 
     finish_p = subparsers.add_parser("finish", help="Complete and archive active session")
     finish_p.add_argument("--notes", "-n", default="", help="Completion notes")

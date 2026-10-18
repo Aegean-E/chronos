@@ -5,6 +5,7 @@ import os
 import shutil
 import tempfile
 import time
+from contextlib import closing
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -42,6 +43,7 @@ class StorageEngine:
             for _ in range(5):
                 try:
                     os.replace(temp_path, path)
+                    self._fsync_directory(path.parent)
                     return
                 except OSError as exc:
                     last_error = exc
@@ -50,6 +52,24 @@ class StorageEngine:
                 raise last_error
         finally:
             temp_path.unlink(missing_ok=True)
+
+    @staticmethod
+    def _fsync_directory(directory: Path) -> None:
+        """Flush the directory entry on POSIX so a rename survives power loss.
+
+        Windows cannot open a directory handle for fsync; os.replace is already
+        durable enough there, so the call is a no-op instead of an error.
+        """
+        if os.name == "nt":
+            return
+        try:
+            with closing(os.open(str(directory), os.O_RDONLY)) as fd:  # hygiene: allow directory fd is closed by closing()
+                try:
+                    os.fsync(fd)
+                except OSError:
+                    pass
+        except OSError:
+            pass
 
     def read_json_safe(self, path: Path, default: Any) -> Any:
         """Read JSON from path, recovering from backup or quarantining corrupt content."""
@@ -83,7 +103,7 @@ class StorageEngine:
 
     def _quarantine(self, path: Path) -> None:
         """Move an unreadable-content file aside so it cannot disable the CLI."""
-        corrupt_dest = path.parent / f".corrupt_{path.name}_{int(time.time())}"
+        corrupt_dest = path.parent / f".corrupt_{path.name}_{time.time_ns()}"
         try:
             os.replace(path, corrupt_dest)
         except OSError:
@@ -94,6 +114,9 @@ class StorageEngine:
         if session_data is None:
             if self.active_path.exists():
                 self.active_path.unlink(missing_ok=True)
+            # A finished session is archived; its stale backup must not be
+            # resurrected as an active session if the slot is later corrupted.
+            self.active_path.with_suffix(self.active_path.suffix + ".bak").unlink(missing_ok=True)
         else:
             self.write_json_atomic(self.active_path, session_data)
 

@@ -17,11 +17,19 @@ class SessionOrchestrator:
         self.repository = repository
 
     def get_active_session(self) -> Optional[Session]:
-        """Return the current in-flight session or None."""
+        """Return the current in-flight session or None.
+
+        Only ACTIVE and PAUSED records are in flight. A stale COMPLETED/ABORTED
+        record can survive a crash between archiving and clearing the active slot;
+        ignoring it prevents a repeated finish/abort from crediting a task twice.
+        """
         raw = self.storage.load_active_session()
-        if not raw:
+        if not isinstance(raw, dict) or not raw:
             return None
-        return Session.from_dict(raw)
+        session = Session.from_dict(raw)
+        if not session.session_id or session.state not in (SessionState.ACTIVE, SessionState.PAUSED):
+            return None
+        return session
 
     def _accumulate_active_segment(self, session: Session) -> None:
         """Add the seconds since the last resume to the session's running total.
@@ -52,8 +60,25 @@ class SessionOrchestrator:
         tag: str = "general",
     ) -> Session:
         """Start a new focus session. Raises RuntimeError if one is already active."""
+        title = title.strip() if isinstance(title, str) else ""
+        if not title:
+            raise RuntimeError("Session title cannot be empty.")
+        try:
+            target_minutes = int(target_minutes)
+        except (TypeError, ValueError):
+            raise RuntimeError("Session duration must be a positive integer.")
+        if target_minutes < 1:
+            raise RuntimeError("Session duration must be at least 1 minute.")
+        tag = (tag.strip() if isinstance(tag, str) else "") or "general"
+
+        bound_task = None
+        if task_id:
+            bound_task = self.repository.get_task(task_id)
+            if bound_task is None:
+                raise RuntimeError(f"Task '{task_id}' not found.")
+
         active = self.get_active_session()
-        if active and active.state in (SessionState.ACTIVE, SessionState.PAUSED):
+        if active:
             raise RuntimeError(f"Session '{active.title}' ({active.session_id}) is currently active.")
 
         session_id = f"sess_{uuid.uuid4().hex[:8]}"
@@ -70,11 +95,9 @@ class SessionOrchestrator:
         self.storage.save_active_session(session.to_dict())
 
         # If linked to a task, update its status to IN_PROGRESS
-        if task_id:
-            task = self.repository.get_task(task_id)
-            if task and task.status == TaskStatus.PENDING:
-                task.status = TaskStatus.IN_PROGRESS
-                self.repository.save_task(task)
+        if bound_task and bound_task.status == TaskStatus.PENDING:
+            bound_task.status = TaskStatus.IN_PROGRESS
+            self.repository.save_task(bound_task)
 
         return session
 
@@ -104,6 +127,16 @@ class SessionOrchestrator:
 
     def add_interruption(self, reason: str, duration_seconds: int = 0) -> Session:
         """Log an interruption on the active session."""
+        reason = reason.strip() if isinstance(reason, str) else ""
+        if not reason:
+            raise RuntimeError("Interruption reason cannot be empty.")
+        try:
+            duration_seconds = int(duration_seconds)
+        except (TypeError, ValueError):
+            raise RuntimeError("Interruption duration must be a non-negative integer.")
+        if duration_seconds < 0:
+            raise RuntimeError("Interruption duration cannot be negative.")
+
         session = self.get_active_session()
         if not session:
             raise RuntimeError("No active session to interrupt.")

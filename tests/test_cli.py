@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from chronos.cli import main
 
@@ -116,6 +117,7 @@ class TestCLIIntegration(unittest.TestCase):
             ["stats", "--days", "-3"],
             ["start", "title", "--duration", "0"],
             ["task", "add", "title", "--estimate", "0"],
+            ["interrupt", "meeting", "--duration", "-1"],
         ]
         for case in cases:
             with self.subTest(case=case):
@@ -123,6 +125,57 @@ class TestCLIIntegration(unittest.TestCase):
                 with redirect_stderr(stderr_buf), self.assertRaises(SystemExit) as raised:
                     main(["--data-dir", str(self.temp_dir)] + case)
                 self.assertEqual(raised.exception.code, 2)
+
+    def test_start_rejects_unknown_task_binding(self):
+        code, _, err = self.run_cli("start", "Typo session", "--task", "task_missing")
+        self.assertEqual(code, 1)
+        self.assertIn("not found", err)
+
+        code, out, _ = self.run_cli("status")
+        self.assertEqual(code, 0)
+        self.assertIn("No active focus session", out)
+
+    def test_task_add_rejects_empty_title(self):
+        code, _, err = self.run_cli("task", "add", "   ")
+        self.assertEqual(code, 1)
+        self.assertIn("title", err)
+        self.assertFalse((self.temp_dir / "tasks.json").exists())
+
+    def test_interrupt_rejects_empty_reason(self):
+        self.run_cli("start", "Interrupt validation")
+        code, _, err = self.run_cli("interrupt", "   ")
+        self.assertEqual(code, 1)
+        self.assertIn("reason", err)
+
+    def test_task_id_collision_does_not_overwrite_existing_task(self):
+        tasks_path = self.temp_dir / "tasks.json"
+        tasks_path.write_text(json.dumps([{
+            "task_id": "task_aaaaaa",
+            "title": "Original",
+            "status": "pending",
+            "estimated_minutes": 25,
+            "spent_seconds": 0,
+        }]), encoding="utf-8")
+
+        class FakeUUID:
+            def __init__(self, value):
+                self.hex = value
+
+        with patch("chronos.cli.uuid.uuid4", side_effect=[FakeUUID("aaaaaa"), FakeUUID("bbbbbb")]):
+            code, out, _ = self.run_cli("task", "add", "Second task")
+
+        self.assertEqual(code, 0)
+        self.assertIn("task_bbbbbb", out)
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        self.assertEqual([t["task_id"] for t in tasks], ["task_aaaaaa", "task_bbbbbb"])
+
+    def test_version_flag(self):
+        stdout_buf = io.StringIO()
+        with redirect_stdout(stdout_buf), self.assertRaises(SystemExit) as raised:
+            main(["--version"])
+
+        self.assertEqual(raised.exception.code, 0)
+        self.assertIn("0.1.0", stdout_buf.getvalue())
 
     def test_task_done_is_idempotent(self):
         code, out, _ = self.run_cli("task", "add", "Finish me once")

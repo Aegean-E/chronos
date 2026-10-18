@@ -113,6 +113,49 @@ class TestSessionOrchestrator(unittest.TestCase):
 
         self.assertGreaterEqual(self.repo.get_task("t-77").spent_seconds, 600)
 
+    def test_stale_completed_active_state_is_ignored_and_not_recredited(self):
+        task = TaskItem(task_id="t-88", title="Crash recovery")
+        self.repo.save_task(task)
+        self.orchestrator.start_session("Interrupted finish", task_id="t-88")
+        self._age_active_session(600)
+        finished = self.orchestrator.finish_session()
+        self.assertEqual(self.repo.get_task("t-88").spent_seconds, finished.elapsed_seconds)
+
+        # Simulate a crash after the history write but before the active slot cleared.
+        archived = self.repo.list_sessions()[0].to_dict()
+        self.storage.write_json_atomic(self.storage.active_path, archived)
+
+        self.assertIsNone(self.orchestrator.get_active_session())
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.finish_session()
+        self.assertEqual(self.repo.get_task("t-88").spent_seconds, finished.elapsed_seconds)
+
+    def test_non_object_active_state_is_treated_as_no_session(self):
+        for bad_state in (["not", "a", "session"], "corrupt", 42):
+            with self.subTest(bad_state=bad_state):
+                self.storage.write_json_atomic(self.storage.active_path, bad_state)
+                self.assertIsNone(self.orchestrator.get_active_session())
+
+    def test_start_rejects_unknown_task_binding(self):
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.start_session("Typo", task_id="task_missing")
+        self.assertIsNone(self.orchestrator.get_active_session())
+
+    def test_start_rejects_empty_title_and_non_positive_duration(self):
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.start_session("   ")
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.start_session("Too short", target_minutes=0)
+        self.assertIsNone(self.orchestrator.get_active_session())
+
+    def test_interruption_rejects_invalid_input(self):
+        self.orchestrator.start_session("Valid session")
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.add_interruption("   ")
+        with self.assertRaises(RuntimeError):
+            self.orchestrator.add_interruption("Meeting", duration_seconds=-1)
+        self.assertEqual(self.orchestrator.get_active_session().interruptions, [])
+
     def _age_active_session(self, seconds: int, aware: bool = True) -> None:
         """Backdate the active session's last resume so elapsed time is deterministic."""
         raw = self.storage.load_active_session()

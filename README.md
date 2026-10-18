@@ -49,12 +49,19 @@ python -m chronos.cli pause
 # Resume focus
 python -m chronos.cli resume
 
-# Log an interruption with cause
+# Log an interruption with cause and a non-negative duration
 python -m chronos.cli interrupt "Urgent Slack message" --duration 120
 
 # Finish and log session notes
 python -m chronos.cli finish --notes "Completed atomic tempfile writes"
+
+# Print the installed CLI version
+python -m chronos.cli --version
 ```
+
+`start --task <id>` fails loudly when the task does not exist, so a typo can never
+silently create an unbound session. Session titles must be non-empty and durations
+must be positive.
 
 ### 2. Micro-Milestones & Tasks
 
@@ -72,7 +79,8 @@ python -m chronos.cli task done <task_id>
 ### 3. Productivity Insights & Streaks
 
 ```bash
-# View summary metrics for the past 7 days (streak spans full history)
+# View summary metrics for the past 7 days (streak spans full history);
+# includes total focus, interruption count, and interruption minutes
 python -m chronos.cli stats
 
 # Export metrics as JSON for integration
@@ -82,8 +90,9 @@ python -m chronos.cli stats --json
 ## 🛡️ Architecture & Guarantees
 
 - **Zero Undeclared Dependencies**: Built exclusively on Python 3 standard library (`argparse`, `json`, `pathlib`, `dataclasses`, `datetime`).
-- **Crash Resilience**: State writes use atomic temp files with `fsync` and atomic `os.replace` to prevent corrupted state on sudden termination.
-- **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined and recovered from the atomic backup.
+- **Crash Resilience**: State writes use atomic temp files with `fsync`, atomic `os.replace`, and a POSIX directory flush to prevent corrupted state on sudden termination.
+- **Idempotent Lifecycle**: a stale `completed`/`aborted` active record left by a crash is ignored, so repeating `finish` or `abort` cannot credit a bound task twice.
+- **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined (with collision-free names) and recovered from the atomic backup.
 - **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
 
 

@@ -57,6 +57,15 @@ class TestStorageEngine(unittest.TestCase):
         self.assertFalse(target.exists())
         self.assertTrue(any(self.temp_dir.glob(".corrupt_*")))
 
+    def test_repeated_quarantine_does_not_overwrite_earlier_corrupt_file(self):
+        target = self.temp_dir / "history.json"
+        for _ in range(2):
+            target.write_text("{broken", encoding="utf-8")
+            self.assertEqual(self.engine.read_json_safe(target, default=[]), [])
+
+        quarantined = list(self.temp_dir.glob(".corrupt_history.json_*"))
+        self.assertEqual(len(quarantined), 2)
+
     def test_read_json_safe_does_not_move_file_on_oserror(self):
         target = self.temp_dir / "unreadable.json"
         target.mkdir()
