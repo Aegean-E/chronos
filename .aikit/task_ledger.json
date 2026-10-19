@@ -1,74 +1,14 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-history-v1",
+    "task_id": "task-chronos-task-mgmt-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792433115.4676723,
-    "completed_at": 1792433117.7170382
+    "updated_at": 1792440044.6907873,
+    "completed_at": 1792440049.0003967
   },
   "checkpoints": [
-    {
-      "task_id": "task-chronos-core-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-core-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792259557.449177,
-      "timestamp_str": "2026-10-17 20:52:37"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: abort time accounting, stats window semantics, collision-free atomic temp names, schema-tolerant history listing",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792353574.3876364,
-      "timestamp_str": "2026-10-18 22:59:34",
-      "impact_assessment": {
-        "why": "An independent review confirmed: aborted sessions archive elapsed_seconds=0 and lose focus time, the stats day-window counts sessions up to 7d23h old and crashes on naive timestamps, atomic temp names can collide within one millisecond, and history rows missing identifiers raise KeyError, bricking every command",
-        "benefits": "Focus totals survive an abort, stats include exactly the last N days and ignore future-dated rows, concurrent writes cannot share a scratch path, and one malformed history row can no longer disable the CLI",
-        "risks": "contract: stats window tightens to elapsed time, abort archives non-zero elapsed_seconds; dependency: none added (stdlib tempfile); concurrency: temp names become collision-free; state: on-disk JSON schema unchanged",
-        "mitigation": "Failing-first tests for each behaviour change, full 'aikit check chronos' before the commit, backward-compatible defaults"
-      }
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] All fixes implemented and verified: 24/24 tests green, aikit check chronos 4/4 gates, ADR-002 recorded; checklists: passed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792353684.335363,
-      "timestamp_str": "2026-10-18 23:01:24"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-review-fixes-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792353697.970803,
-      "timestamp_str": "2026-10-18 23:01:37"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v2",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: second independent review; fix 4 crash-class defects (output encoding on redirected stdout, naive/garbage timestamp parsing, malformed model rows, invalid-UTF-8 state files) and 4 gaps (streak clipped by --days, abort not crediting bound tasks, unchecked --days/--duration/--estimate, non-idempotent task done)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792356842.4029915,
-      "timestamp_str": "2026-10-18 23:54:02",
-      "impact_assessment": {
-        "why": "Reproduced defects: UnicodeEncodeError when stdout is a cp1252 pipe, TypeError/ValueError from _accumulate_active_segment on naive or garbage last_resumed_at, ValueError/AttributeError on malformed history rows, UnicodeDecodeError from uncaught invalid UTF-8; plus streak <= days_window, aborted focus time never credited to a bound task, and invalid integers silently accepted",
-        "benefits": "Every command survives malformed state and non-UTF-8 pipes on Windows; correct all-history streak; aborted work counted on bound tasks; usage errors exit 2 with a clear message; task done is idempotent",
-        "risks": "contract: invalid --days/--duration/--estimate now exit 2, otherwise CLI contract unchanged; dependency: none (stdlib only); concurrency: no locking added deliberately (single-user CLI, last-writer-wins documented); state: on-disk JSON schema unchanged, only reads become more tolerant",
-        "mitigation": "Failing-first tests per defect before each fix; JSON schema frozen; storage writes stay atomic; re-run 24-test suite + aikit check chronos 4/4 before commit; ADR-003 records each change"
-      }
-    },
     {
       "task_id": "task-chronos-review-fixes-v2",
       "phase": "phase 3",
@@ -232,6 +172,67 @@
       "status": "completed",
       "timestamp": 1792433117.7170396,
       "timestamp_str": "2026-10-19 21:05:17"
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: expand task management with task delete/rm, task list filtering & JSON output, and detailed task show with bound session history",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792439757.6699626,
+      "timestamp_str": "2026-10-19 22:55:57",
+      "impact_assessment": {
+        "why": "Developers can create, list, and complete tasks, but cannot delete obsolete tasks, inspect task history and linked focus sessions, or export/filter task lists programmatically via CLI",
+        "benefits": "Provides full task lifecycle management (delete/rm, status filtering, show with linked session breakdown, json export) while preserving atomic persistence and preventing deletion of tasks bound to active sessions",
+        "risks": "contract: new subcommands and options added to 'task', existing commands remain backward-compatible; dependency: none added (stdlib only); concurrency: atomic writes maintained; state: on-disk JSON schema unchanged",
+        "mitigation": "Failing-first tests for repository and CLI, rejection of deletion when an active session is bound, full Phase 4 checks (aikit check chronos) before commit, ADR-006 recorded"
+      }
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/4] Plan: extended task management (task remove, clear completed, show with linked session progress, list --status/--json)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792439784.1986458,
+      "timestamp_str": "2026-10-19 22:56:24",
+      "impact_assessment": {
+        "why": "Micro-milestones in Chronos could only be added, listed, or completed; users could not inspect deep task details (e.g. linked focus sessions and progress), delete accidental tasks, clear completed backlog clutter, or filter/export task lists",
+        "benefits": "Users gain full lifecycle management over tasks: 'task show' inspects estimate, spent time, and linked focus sessions; 'task remove' safely deletes unused tasks (preventing deletion of active session tasks); 'task clear' prunes completed backlog; 'task list' supports --status and --json",
+        "risks": "contract: new subcommands and options added to 'task'; existing 'task add', 'task list', 'task done' backwards-compatible; dependency: none (stdlib only); concurrency: atomic writes preserved; state: on-disk JSON schema unchanged",
+        "mitigation": "Failing-first tests for repository mutations, active session protection, and CLI subcommands; verify 4/4 aikit check chronos gates before commit; record ADR-006"
+      }
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/4] Failing-first unit and CLI tests added (62 -> 68) for repository clear_completed_tasks/delete_task and CLI task remove, clear, show, and list filtering/JSON",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792439891.3048453,
+      "timestamp_str": "2026-10-19 22:58:11"
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[4/4] Phase 4 green: 69/69 tests in 1.2s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-006 recorded; README and codebase map synchronized",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792440044.6907873,
+      "timestamp_str": "2026-10-19 23:00:44"
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-task-mgmt-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792440049.0003984,
+      "timestamp_str": "2026-10-19 23:00:49"
     }
   ]
 }

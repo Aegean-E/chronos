@@ -247,7 +247,11 @@ def _unique_task_id(repository: Repository) -> str:
             return candidate
 
 
-def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
+def cmd_task(
+    args: argparse.Namespace,
+    repository: Repository,
+    orchestrator: Optional[SessionOrchestrator] = None,
+) -> int:
     if args.task_command == "add":
         title = args.title.strip()
         if not title:
@@ -265,8 +269,19 @@ def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
 
     if args.task_command == "list":
         tasks = repository.list_tasks()
+        status_filter = getattr(args, "status", "all")
+        if status_filter != "all":
+            tasks = [t for t in tasks if t.status == status_filter]
+
+        if getattr(args, "json", False):
+            print(json.dumps([t.to_dict() for t in tasks], indent=2))
+            return 0
+
         if not tasks:
-            print("No tasks found. Create one with `chronos task add <title>`.")
+            if status_filter != "all":
+                print(f"No tasks found matching status '{status_filter}'.")
+            else:
+                print("No tasks found. Create one with `chronos task add <title>`.")
             return 0
         print("──────────────────────────────────────────────────────────")
         for t in tasks:
@@ -290,7 +305,69 @@ def cmd_task(args: argparse.Namespace, repository: Repository) -> int:
         print(f"🎉 Marked task '{task.title}' as done!")
         return 0
 
-    print("Usage: chronos task {add,list,done} ...", file=sys.stderr)
+    if args.task_command == "show":
+        task = repository.get_task(args.task_id)
+        if not task:
+            print(f"Error: Task '{args.task_id}' not found.", file=sys.stderr)
+            return 1
+        all_sessions = repository.list_sessions()
+        bound_sessions = [s for s in all_sessions if s.task_id == task.task_id]
+
+        if getattr(args, "json", False):
+            payload = {
+                "task": task.to_dict(),
+                "sessions": [s.to_dict() for s in bound_sessions],
+            }
+            print(json.dumps(payload, indent=2))
+            return 0
+
+        status_symbol = "✔" if task.status == TaskStatus.DONE else ("▶" if task.status == TaskStatus.IN_PROGRESS else "○")
+        spent_m = task.spent_seconds // 60
+        print("──────────────────────────────────────────────────────────")
+        print(f"Task:        {task.title} [{task.task_id}]")
+        print(f"Status:      {status_symbol} {task.status}")
+        print(f"Estimate:    {task.estimated_minutes}m")
+        print(f"Spent:       {spent_m}m ({task.spent_seconds}s)")
+        print(f"Created:     {task.created_at}")
+        if task.completed_at:
+            print(f"Completed:   {task.completed_at}")
+        if bound_sessions:
+            print(f"Sessions ({len(bound_sessions)}):")
+            for s in bound_sessions:
+                dur_m = s.elapsed_seconds // 60
+                note_str = f" - {s.notes}" if s.notes else ""
+                print(f"  • {s.started_at} [{s.state}] {dur_m}m: {s.title}{note_str}")
+        else:
+            print("Sessions:    None recorded yet")
+        print("──────────────────────────────────────────────────────────")
+        return 0
+
+    if args.task_command in ("remove", "delete", "rm"):
+        task = repository.get_task(args.task_id)
+        if not task:
+            print(f"Error: Task '{args.task_id}' not found.", file=sys.stderr)
+            return 1
+        if orchestrator is not None:
+            active = orchestrator.get_active_session()
+            if active and active.task_id == task.task_id:
+                print(
+                    f"Error: Cannot remove task '{task.task_id}': an active session is currently bound to it.",
+                    file=sys.stderr,
+                )
+                return 1
+        repository.delete_task(task.task_id)
+        print(f"🗑️  Removed task '{task.title}' [{task.task_id}]")
+        return 0
+
+    if args.task_command == "clear":
+        cleared_count = repository.clear_completed_tasks()
+        if cleared_count == 0:
+            print("No completed tasks to clear.")
+        else:
+            print(f"🧹 Cleared {cleared_count} completed task(s).")
+        return 0
+
+    print("Usage: chronos task {add,list,done,show,remove,clear} ...", file=sys.stderr)
     return 2
 
 
@@ -338,10 +415,27 @@ def build_parser() -> argparse.ArgumentParser:
     task_add.add_argument("title", help="Task title")
     task_add.add_argument("--estimate", "-e", type=_positive_int, default=25, help="Estimated minutes")
 
-    task_subs.add_parser("list", help="List all tasks")
+    task_list = task_subs.add_parser("list", help="List all tasks")
+    task_list.add_argument(
+        "--status",
+        "-s",
+        choices=["all", "pending", "in_progress", "done"],
+        default="all",
+        help="Filter tasks by status (default: all)",
+    )
+    task_list.add_argument("--json", action="store_true", help="Output JSON format")
 
     task_done = task_subs.add_parser("done", help="Mark a task completed")
     task_done.add_argument("task_id", help="Task ID")
+
+    task_show = task_subs.add_parser("show", help="Show task details and bound sessions")
+    task_show.add_argument("task_id", help="Task ID")
+    task_show.add_argument("--json", action="store_true", help="Output JSON format")
+
+    task_remove = task_subs.add_parser("remove", aliases=["rm", "delete"], help="Remove a task")
+    task_remove.add_argument("task_id", help="Task ID")
+
+    task_subs.add_parser("clear", help="Clear all completed tasks")
 
     return parser
 
@@ -379,7 +473,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "history":
         return cmd_history(args, repository)
     if args.command == "task":
-        return cmd_task(args, repository)
+        return cmd_task(args, repository, orchestrator)
 
     return 0
 

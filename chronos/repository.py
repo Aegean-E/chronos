@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import List, Optional
 
-from chronos.models import Session, TaskItem
+from chronos.models import Session, TaskItem, TaskStatus
 from chronos.storage import StorageEngine
 
 
@@ -51,3 +51,23 @@ class Repository:
     def get_task(self, task_id: str) -> Optional[TaskItem]:
         """Find a task by its unique identifier."""
         return next((t for t in self.list_tasks() if t.task_id == task_id), None)
+
+    def delete_task(self, task_id: str) -> bool:
+        """Delete a task item by ID. Returns True if deleted, False if not found."""
+        tasks = self.list_tasks()
+        initial_len = len(tasks)
+        tasks = [t for t in tasks if t.task_id != task_id]
+        if len(tasks) == initial_len:
+            return False
+        self.storage.write_json_atomic(self.storage.tasks_path, [t.to_dict() for t in tasks])
+        return True
+
+    def clear_completed_tasks(self) -> int:
+        """Remove all completed tasks. Returns the number of cleared tasks."""
+        tasks = self.list_tasks()
+        remaining = [t for t in tasks if t.status != TaskStatus.DONE]
+        cleared_count = len(tasks) - len(remaining)
+        if cleared_count > 0:
+            self.storage.write_json_atomic(self.storage.tasks_path, [t.to_dict() for t in remaining])
+        return cleared_count
+

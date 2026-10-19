@@ -69,11 +69,23 @@ must be positive.
 # Add a micro-milestone
 python -m chronos.cli task add "Implement test suite" --estimate 30
 
-# List active and completed tasks
+# List active and completed tasks (or filter by --status, or export --json)
 python -m chronos.cli task list
+python -m chronos.cli task list --status pending
+python -m chronos.cli task list --json
+
+# Inspect task progress, estimate, spent time, and linked focus sessions
+python -m chronos.cli task show <task_id>
+python -m chronos.cli task show <task_id> --json
 
 # Mark task complete
 python -m chronos.cli task done <task_id>
+
+# Remove an unneeded task (prevented if currently bound to an active session)
+python -m chronos.cli task remove <task_id>
+
+# Clear all completed tasks from the backlog
+python -m chronos.cli task clear
 ```
 
 ### 3. Productivity Insights & Streaks

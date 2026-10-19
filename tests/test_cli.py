@@ -260,6 +260,181 @@ class TestCLIIntegration(unittest.TestCase):
         after_completed_at = json.loads(tasks_path.read_text(encoding="utf-8"))[0]["completed_at"]
         self.assertEqual(after_completed_at, first_completed_at)
 
+    def test_task_remove_success_and_aliases(self):
+        code, out, _ = self.run_cli("task", "add", "Task to remove")
+        self.assertEqual(code, 0)
+        task_id = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        # Remove with 'remove' command
+        code, out, _ = self.run_cli("task", "remove", task_id)
+        self.assertEqual(code, 0)
+        self.assertIn(f"Removed task 'Task to remove' [{task_id}]", out)
+
+        tasks_path = self.temp_dir / "tasks.json"
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        self.assertEqual(tasks, [])
+
+        # Add another and remove with 'delete' alias
+        code, out, _ = self.run_cli("task", "add", "Task to delete")
+        self.assertEqual(code, 0)
+        task_id2 = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        code, out, _ = self.run_cli("task", "delete", task_id2)
+        self.assertEqual(code, 0)
+        self.assertIn(f"Removed task 'Task to delete' [{task_id2}]", out)
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        self.assertEqual(tasks, [])
+
+        # Add another and remove with 'rm' alias
+        code, out, _ = self.run_cli("task", "add", "Task to rm")
+        self.assertEqual(code, 0)
+        task_id3 = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        code, out, _ = self.run_cli("task", "rm", task_id3)
+        self.assertEqual(code, 0)
+        self.assertIn(f"Removed task 'Task to rm' [{task_id3}]", out)
+        tasks = json.loads(tasks_path.read_text(encoding="utf-8"))
+        self.assertEqual(tasks, [])
+
+    def test_task_clear(self):
+        # 1. No completed tasks
+        code, out, _ = self.run_cli("task", "clear")
+        self.assertEqual(code, 0)
+        self.assertIn("No completed tasks to clear.", out)
+
+        # 2. Add pending task and two done tasks
+        self.run_cli("task", "add", "Pending Task")
+        _, out2, _ = self.run_cli("task", "add", "Done Task 1")
+        t2_id = re.search(r"\[(task_[0-9a-f]+)\]", out2).group(1)
+        _, out3, _ = self.run_cli("task", "add", "Done Task 2")
+        t3_id = re.search(r"\[(task_[0-9a-f]+)\]", out3).group(1)
+
+        self.run_cli("task", "done", t2_id)
+        self.run_cli("task", "done", t3_id)
+
+        # 3. Clear completed tasks
+        code, out, _ = self.run_cli("task", "clear")
+        self.assertEqual(code, 0)
+        self.assertIn("Cleared 2 completed task(s).", out)
+
+        # Check only pending task remains
+        code, out, _ = self.run_cli("task", "list")
+        self.assertIn("Pending Task", out)
+        self.assertNotIn("Done Task 1", out)
+        self.assertNotIn("Done Task 2", out)
+
+    def test_task_remove_errors(self):
+        # 1. Non-existent task
+        code, _, err = self.run_cli("task", "remove", "task_nonexistent")
+        self.assertEqual(code, 1)
+        self.assertIn("not found", err)
+
+        # 2. Cannot delete task bound to active session
+        code, out, _ = self.run_cli("task", "add", "Bound Task")
+        self.assertEqual(code, 0)
+        task_id = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        code, _, _ = self.run_cli("start", "Active Session", "--task", task_id)
+        self.assertEqual(code, 0)
+
+        code, _, err = self.run_cli("task", "remove", task_id)
+        self.assertEqual(code, 1)
+        self.assertIn("active", err)
+
+        # Clean up session
+        self.run_cli("abort")
+
+    def test_task_list_filtering_and_json(self):
+        # Add 3 tasks
+        self.run_cli("task", "add", "Pending Task")
+        _, out2, _ = self.run_cli("task", "add", "In Progress Task")
+        t2_id = re.search(r"\[(task_[0-9a-f]+)\]", out2).group(1)
+        _, out3, _ = self.run_cli("task", "add", "Done Task")
+        t3_id = re.search(r"\[(task_[0-9a-f]+)\]", out3).group(1)
+
+        # Put t2 in progress
+        self.run_cli("start", "Working t2", "--task", t2_id)
+        self.run_cli("pause")
+
+        # Put t3 done
+        self.run_cli("task", "done", t3_id)
+
+        # 1. Plain list without filter shows all 3
+        code, out, _ = self.run_cli("task", "list")
+        self.assertEqual(code, 0)
+        self.assertIn("Pending Task", out)
+        self.assertIn("In Progress Task", out)
+        self.assertIn("Done Task", out)
+
+        # 2. Filter by status: pending
+        code, out, _ = self.run_cli("task", "list", "--status", "pending")
+        self.assertEqual(code, 0)
+        self.assertIn("Pending Task", out)
+        self.assertNotIn("In Progress Task", out)
+        self.assertNotIn("Done Task", out)
+
+        # 3. Filter by status: in_progress
+        code, out, _ = self.run_cli("task", "list", "--status", "in_progress")
+        self.assertEqual(code, 0)
+        self.assertIn("In Progress Task", out)
+        self.assertNotIn("Pending Task", out)
+
+        # 4. Filter by status: done
+        code, out, _ = self.run_cli("task", "list", "--status", "done")
+        self.assertEqual(code, 0)
+        self.assertIn("Done Task", out)
+        self.assertNotIn("Pending Task", out)
+
+        # 5. List JSON output
+        code, out, _ = self.run_cli("task", "list", "--json")
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertEqual(len(data), 3)
+
+        # 6. List JSON output with status filter
+        code, out, _ = self.run_cli("task", "list", "--status", "done", "--json")
+        self.assertEqual(code, 0)
+        data = json.loads(out)
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["title"], "Done Task")
+
+        # Clean up active session
+        self.run_cli("abort")
+
+    def test_task_show_text_and_json(self):
+        code, out, _ = self.run_cli("task", "add", "Showcase Feature", "--estimate", "40")
+        self.assertEqual(code, 0)
+        task_id = re.search(r"\[(task_[0-9a-f]+)\]", out).group(1)
+
+        # Run and finish a session bound to this task
+        self.run_cli("start", "Coding feature", "--task", task_id)
+        self.run_cli("finish", "--notes", "Part 1 completed")
+
+        # 1. Text format
+        code, out, _ = self.run_cli("task", "show", task_id)
+        self.assertEqual(code, 0)
+        self.assertIn("Showcase Feature", out)
+        self.assertIn(task_id, out)
+        self.assertIn("Coding feature", out)
+        self.assertIn("Part 1 completed", out)
+
+        # 2. JSON format
+        code, out, _ = self.run_cli("task", "show", task_id, "--json")
+        self.assertEqual(code, 0)
+        payload = json.loads(out)
+        self.assertIn("task", payload)
+        self.assertIn("sessions", payload)
+        self.assertEqual(payload["task"]["task_id"], task_id)
+        self.assertEqual(payload["task"]["title"], "Showcase Feature")
+        self.assertEqual(len(payload["sessions"]), 1)
+        self.assertEqual(payload["sessions"][0]["title"], "Coding feature")
+        self.assertEqual(payload["sessions"][0]["notes"], "Part 1 completed")
+
+        # 3. Non-existent task
+        code, _, err = self.run_cli("task", "show", "task_unknown")
+        self.assertEqual(code, 1)
+        self.assertIn("not found", err)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -85,6 +85,38 @@ class TestRepository(unittest.TestCase):
         self.repo.append_session(Session(session_id="s2", title="Clean", target_minutes=25))
         self.assertEqual(len(self.repo.list_sessions()), 2)
 
+    def test_delete_task(self):
+        task = TaskItem(task_id="t1", title="To Delete")
+        self.repo.save_task(task)
+        self.assertIsNotNone(self.repo.get_task("t1"))
+
+        # Delete existing task
+        deleted = self.repo.delete_task("t1")
+        self.assertTrue(deleted)
+        self.assertIsNone(self.repo.get_task("t1"))
+
+        # Delete non-existent task
+        deleted_again = self.repo.delete_task("t1")
+        self.assertFalse(deleted_again)
+
+    def test_clear_completed_tasks(self):
+        t1 = TaskItem(task_id="t1", title="Pending Task", status=TaskStatus.PENDING)
+        t2 = TaskItem(task_id="t2", title="Done Task 1", status=TaskStatus.DONE)
+        t3 = TaskItem(task_id="t3", title="In Progress Task", status=TaskStatus.IN_PROGRESS)
+        t4 = TaskItem(task_id="t4", title="Done Task 2", status=TaskStatus.DONE)
+        for t in (t1, t2, t3, t4):
+            self.repo.save_task(t)
+
+        cleared = self.repo.clear_completed_tasks()
+        self.assertEqual(cleared, 2)
+
+        remaining_ids = [t.task_id for t in self.repo.list_tasks()]
+        self.assertEqual(remaining_ids, ["t1", "t3"])
+
+        # Clearing again returns 0
+        cleared_again = self.repo.clear_completed_tasks()
+        self.assertEqual(cleared_again, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

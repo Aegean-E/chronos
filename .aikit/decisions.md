@@ -44,3 +44,12 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Add `chronos history` with `--days`, `--tag`, `--limit` (default 20) and `--json`, backed by a pure `select_history` helper in the analytics module that sorts newest first and reuses the metrics filter semantics: a row whose stored start timestamp is missing, malformed or in the future is skipped, and the window is elapsed time, not floored days.
 - **Consequences**: The archive becomes readable without hand-editing JSON, with the same malformed-row behaviour as `stats`. No existing command changes and the on-disk schema is unchanged. Known limitation (accepted): rows with malformed timestamps are invisible to `history`, as they already were to `stats`.
 
+
+### ADR-006: Extended Task Management Commands (show, remove, clear, list filtering)
+- **Date**: 2026-10-19
+- **Status**: Accepted
+- **Context**: In Chronos v1, micro-milestones could only be added, listed in full, and marked done. Users could not inspect the progress of an individual task (including its estimated vs spent time and bound focus sessions), delete accidental or abandoned tasks, prune completed tasks from the backlog, or filter/export task lists. Moreover, deleting a task that is currently bound to an active in-flight session could lead to orphaned task references.
+- **Decision**: Add `chronos task show <id>` (text and `--json` view with estimate, spent time, status, and linked historical focus sessions), `chronos task remove <id>` (with `rm` and `delete` aliases, preventing removal of any task currently bound to an active session), `chronos task clear` (pruning all completed tasks atomically), and `--status` / `--json` flags to `chronos task list`. Backed by atomic repository operations `delete_task` and `clear_completed_tasks`.
+- **Consequences**: Users gain complete lifecycle control over tasks with safety invariants against deleting in-flight session bindings. No existing commands break and the on-disk storage format remains backward-compatible.
+
+

@@ -9,8 +9,8 @@
 - **Total Python Modules**: `15`
 - **Total Classes**: `15`
 - **Total Top-Level Functions**: `26`
-- **Total Class Methods**: `101`
-- **Total Source Lines**: `1967`
+- **Total Class Methods**: `110`
+- **Total Source Lines**: `2288`
 
 ---
 
@@ -37,7 +37,7 @@
 ### [`chronos/cli.py`](chronos/cli.py)
 > *Command-line interface for Chronos.*
 
-**Size**: `388` lines (`16889` bytes)
+**Size**: `482` lines (`21108` bytes)
 
 **Functions:**
 - `def _configure_output_encoding()` - *Keep emoji output from crashing when the terminal cannot encode it.*
@@ -55,7 +55,7 @@
 - `def cmd_stats(args, repository)`
 - `def cmd_history(args, repository)`
 - `def _unique_task_id(repository)` - *Generate a task id that cannot overwrite an existing task.*
-- `def cmd_task(args, repository)`
+- `def cmd_task(args, repository, orchestrator)`
 - `def build_parser()`
 - `def main(argv)`
 
@@ -112,7 +112,7 @@
 ### [`chronos/repository.py`](chronos/repository.py)
 > *Data repository for sessions and tasks.*
 
-**Size**: `53` lines (`2241` bytes)
+**Size**: `73` lines (`3133` bytes)
 
 **Classes:**
 - `class Repository` - *Provides high-level queries and mutations for sessions and tasks.*
@@ -122,6 +122,8 @@
   - Method `.list_tasks()` - *Load all tasks.*
   - Method `.save_task(task)` - *Create or update a task item.*
   - Method `.get_task(task_id)` - *Find a task by its unique identifier.*
+  - Method `.delete_task(task_id)` - *Delete a task item by ID. Returns True if deleted, False if not found.*
+  - Method `.clear_completed_tasks()` - *Remove all completed tasks. Returns the number of cleared tasks.*
 
 ---
 
@@ -177,7 +179,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *Integration tests for Chronos CLI commands.*
 
-**Size**: `265` lines (`10032` bytes)
+**Size**: `440` lines (`17066` bytes)
 
 **Classes:**
 - `class TestCLIIntegration`
@@ -198,6 +200,11 @@
   - Method `.test_task_id_collision_does_not_overwrite_existing_task()`
   - Method `.test_version_flag()`
   - Method `.test_task_done_is_idempotent()`
+  - Method `.test_task_remove_success_and_aliases()`
+  - Method `.test_task_clear()`
+  - Method `.test_task_remove_errors()`
+  - Method `.test_task_list_filtering_and_json()`
+  - Method `.test_task_show_text_and_json()`
 
 ---
 
@@ -261,7 +268,7 @@
 ### [`tests/test_repository.py`](tests/test_repository.py)
 > *Unit tests for Chronos repository.*
 
-**Size**: `90` lines (`3183` bytes)
+**Size**: `122` lines (`4456` bytes)
 
 **Classes:**
 - `class TestRepository`
@@ -271,6 +278,8 @@
   - Method `.test_list_sessions_skips_rows_missing_an_id()`
   - Method `.test_list_tasks_skips_rows_missing_an_id()`
   - Method `.test_list_sessions_tolerates_malformed_rows()`
+  - Method `.test_delete_task()`
+  - Method `.test_clear_completed_tasks()`
 
 ---
 
