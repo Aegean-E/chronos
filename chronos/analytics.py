@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from chronos.models import Session, SessionState, try_parse_iso
 
@@ -77,3 +77,30 @@ def compute_metrics(sessions: List[Session], days_window: int = 7) -> Dict[str, 
         "current_streak_days": streak,
         "tags_minutes": {tag: round(secs / 60.0, 1) for tag, secs in tags.items()},
     }
+
+
+def select_history(
+    sessions: List[Session],
+    days_window: Optional[int] = None,
+    tag: Optional[str] = None,
+    limit: int = 20,
+) -> List[Session]:
+    """Return archived sessions newest first, filtered by elapsed window, tag and limit.
+
+    A row whose start timestamp is missing, malformed or in the future is skipped, exactly
+    as compute_metrics does, so the history and the stats view agree on what counts.
+    """
+    now = datetime.now(timezone.utc)
+    window = timedelta(days=days_window) if days_window is not None else None
+    selected = []
+    for session in sessions:
+        started = try_parse_iso(session.started_at)
+        if started is None or started > now:
+            continue
+        if window is not None and now - started > window:
+            continue
+        if tag is not None and session.tag.lower() != tag.lower():
+            continue
+        selected.append((started, session))
+    selected.sort(key=lambda item: item[0], reverse=True)
+    return [session for _, session in selected[:limit]]

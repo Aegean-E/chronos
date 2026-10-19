@@ -87,6 +87,23 @@ python -m chronos.cli stats
 python -m chronos.cli stats --json
 ```
 
+### 4. Reviewing Session History
+
+```bash
+# List the 20 most recent archived sessions, newest first
+python -m chronos.cli history
+
+# Only sessions started within the last 7 days, for one tag
+python -m chronos.cli history --days 7 --tag coding
+
+# Export the archived session list as JSON for integration
+python -m chronos.cli history --json
+```
+
+`--limit` caps the list (default 20) and `--tag` matches case-insensitively. Rows whose
+stored start timestamp is malformed or in the future are skipped, exactly like the
+stats window.
+
 ## 🛡️ Architecture & Guarantees
 
 - **Zero Undeclared Dependencies**: Built exclusively on Python 3 standard library (`argparse`, `json`, `pathlib`, `dataclasses`, `datetime`).

@@ -1,60 +1,14 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-hygiene-fixes-v1",
+    "task_id": "task-chronos-history-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792432928.6237967,
-    "completed_at": 1792432942.9373288
+    "updated_at": 1792433115.4676723,
+    "completed_at": 1792433117.7170382
   },
   "checkpoints": [
-    {
-      "task_id": "task-chronos-core-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Planning and architectural design: ADR-001, project structure, and pyproject.toml",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792259142.0933948,
-      "timestamp_str": "2026-10-17 20:45:42",
-      "impact_assessment": {
-        "why": "Bootstrap Chronos developer focus and session orchestrator with robust local storage",
-        "benefits": "Enables distraction-free session tracking, micro-milestone management, and productivity metrics",
-        "risks": "contract: CLI interface schema stability; dependency: none (standard library); concurrency: multi-process file locking; state: power-loss atomicity",
-        "mitigation": "Use strict data models, advisory file locks, atomic temp+fsync+replace writes, and thorough unit tests"
-      }
-    },
-    {
-      "task_id": "task-chronos-core-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Domain models and atomic storage engine with full unit tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792259277.528773,
-      "timestamp_str": "2026-10-17 20:47:57"
-    },
-    {
-      "task_id": "task-chronos-core-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[3/4] Session manager, task tracker, and metrics analytics with unit tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792259385.1502447,
-      "timestamp_str": "2026-10-17 20:49:45"
-    },
-    {
-      "task_id": "task-chronos-core-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[4/4] CLI interface, end-to-end integration tests, README documentation, and Phase 4 gate verification",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792259465.3213792,
-      "timestamp_str": "2026-10-17 20:51:05"
-    },
     {
       "task_id": "task-chronos-core-v1",
       "phase": "completed",
@@ -233,6 +187,51 @@
       "status": "completed",
       "timestamp": 1792432942.9373302,
       "timestamp_str": "2026-10-19 21:02:22"
+    },
+    {
+      "task_id": "task-chronos-history-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: add a `history` command that lists archived sessions newest first with optional --days, --tag, --limit and --json, backed by a pure select_history helper and covered by failing-first unit and CLI tests",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792433039.822833,
+      "timestamp_str": "2026-10-19 21:03:59",
+      "impact_assessment": {
+        "why": "Archived sessions are write-only today: finish/abort store them and stats aggregates them, but no command lists them, so a developer cannot review individual sessions, filter by tag or inspect notes; Repository.list_sessions already exists with no CLI consumer",
+        "benefits": "Users can review recent sessions newest first, narrow by elapsed window or tag, and integrate via JSON; the existing analytics filter semantics are reused so malformed rows stay skipped",
+        "risks": "contract: new command and options only, existing commands unchanged; dependency: none (stdlib only); concurrency: read-only, no new writes or locks; state: on-disk schema unchanged",
+        "mitigation": "Failing-first unit tests for ordering/window/tag/limit/malformed rows and CLI tests for text/JSON/empty/invalid input; full aikit check chronos 4/4 before the commit; ADR-005 records the new command"
+      }
+    },
+    {
+      "task_id": "task-chronos-history-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Failing-first tests added (54 -> 62: 5 unit for select_history ordering/window/tag/limit/future+malformed rows, 3 CLI for text/JSON/filtering/empty plus invalid --days/--limit usage), then implemented select_history in analytics and the history command in cli; all 62 tests green in 0.8s",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792433086.87872,
+      "timestamp_str": "2026-10-19 21:04:46"
+    },
+    {
+      "task_id": "task-chronos-history-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green on the working tree: 62/62 tests in 0.8s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-005 recorded; README history section and codebase map synchronized; smoke-tested start/interrupt/finish/abort/history text+JSON in a throwaway data dir",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792433115.4676723,
+      "timestamp_str": "2026-10-19 21:05:15"
+    },
+    {
+      "task_id": "task-chronos-history-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-history-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792433117.7170396,
+      "timestamp_str": "2026-10-19 21:05:17"
     }
   ]
 }

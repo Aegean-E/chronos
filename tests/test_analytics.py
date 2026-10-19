@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from chronos.analytics import compute_metrics
+from chronos.analytics import compute_metrics, select_history
 from chronos.models import Interruption, Session, SessionState, now_iso
 
 
@@ -104,11 +104,64 @@ class TestAnalytics(unittest.TestCase):
         self.assertEqual(metrics["completed_count"], 1)
         self.assertEqual(metrics["current_streak_days"], 1)
 
-    def _completed_session(self, session_id: str, started_at: str, elapsed_seconds: int = 600) -> Session:
+    def test_history_selects_newest_first_within_window(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session("old", (now - timedelta(days=9)).isoformat()),
+            self._completed_session("middle", (now - timedelta(days=2)).isoformat()),
+            self._completed_session("newest", (now - timedelta(hours=1)).isoformat()),
+        ]
+
+        selected = select_history(sessions, days_window=7)
+
+        self.assertEqual([s.session_id for s in selected], ["newest", "middle"])
+
+    def test_history_filters_by_tag_case_insensitively(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session("code-1", now.isoformat(), tag="coding"),
+            self._completed_session("review-1", now.isoformat(), tag="review"),
+        ]
+
+        selected = select_history(sessions, tag="CODING")
+
+        self.assertEqual([s.session_id for s in selected], ["code-1"])
+
+    def test_history_limit_keeps_the_newest_rows(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session(f"day-{i}", (now - timedelta(days=i)).isoformat())
+            for i in range(5)
+        ]
+
+        selected = select_history(sessions, limit=2)
+
+        self.assertEqual([s.session_id for s in selected], ["day-0", "day-1"])
+
+    def test_history_skips_future_and_malformed_timestamps(self):
+        now = datetime.now(timezone.utc)
+        sessions = [
+            self._completed_session("garbage", "not-a-date"),
+            self._completed_session("missing", ""),
+            self._completed_session("future", (now + timedelta(days=1)).isoformat()),
+            self._completed_session("today", now.isoformat()),
+        ]
+
+        selected = select_history(sessions)
+
+        self.assertEqual([s.session_id for s in selected], ["today"])
+
+    def test_history_empty(self):
+        self.assertEqual(select_history([]), [])
+
+    def _completed_session(
+        self, session_id: str, started_at: str, elapsed_seconds: int = 600, tag: str = "general"
+    ) -> Session:
         return Session(
             session_id=session_id,
             title=session_id,
             target_minutes=30,
+            tag=tag,
             state=SessionState.COMPLETED,
             started_at=started_at,
             elapsed_seconds=elapsed_seconds,

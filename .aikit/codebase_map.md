@@ -8,9 +8,9 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `15`
 - **Total Classes**: `15`
-- **Total Top-Level Functions**: `24`
-- **Total Class Methods**: `91`
-- **Total Source Lines**: `1779`
+- **Total Top-Level Functions**: `26`
+- **Total Class Methods**: `101`
+- **Total Source Lines**: `1967`
 
 ---
 
@@ -26,17 +26,18 @@
 ### [`chronos/analytics.py`](chronos/analytics.py)
 > *Productivity metrics, streak tracking, and focus analytics.*
 
-**Size**: `79` lines (`3246` bytes)
+**Size**: `106` lines (`4297` bytes)
 
 **Functions:**
 - `def compute_metrics(sessions, days_window)` - *Calculate focus metrics over the elapsed window; the streak spans all history given.*
+- `def select_history(sessions, days_window, tag, limit)` - *Return archived sessions newest first, filtered by elapsed window, tag and limit.*
 
 ---
 
 ### [`chronos/cli.py`](chronos/cli.py)
 > *Command-line interface for Chronos.*
 
-**Size**: `347` lines (`14680` bytes)
+**Size**: `388` lines (`16889` bytes)
 
 **Functions:**
 - `def _configure_output_encoding()` - *Keep emoji output from crashing when the terminal cannot encode it.*
@@ -52,6 +53,7 @@
 - `def cmd_abort(args, orchestrator)`
 - `def cmd_status(args, orchestrator)`
 - `def cmd_stats(args, repository)`
+- `def cmd_history(args, repository)`
 - `def _unique_task_id(repository)` - *Generate a task id that cannot overwrite an existing task.*
 - `def cmd_task(args, repository)`
 - `def build_parser()`
@@ -151,7 +153,7 @@
 ### [`tests/test_analytics.py`](tests/test_analytics.py)
 > *Unit tests for Chronos metrics and analytics.*
 
-**Size**: `119` lines (`4563` bytes)
+**Size**: `172` lines (`6576` bytes)
 
 **Classes:**
 - `class TestAnalytics`
@@ -163,21 +165,31 @@
   - Method `.test_streak_spans_more_days_than_the_window()`
   - Method `.test_streak_ignores_future_dated_sessions()`
   - Method `.test_malformed_timestamps_are_skipped_deterministically()`
-  - Method `._completed_session(session_id, started_at, elapsed_seconds)`
+  - Method `.test_history_selects_newest_first_within_window()`
+  - Method `.test_history_filters_by_tag_case_insensitively()`
+  - Method `.test_history_limit_keeps_the_newest_rows()`
+  - Method `.test_history_skips_future_and_malformed_timestamps()`
+  - Method `.test_history_empty()`
+  - Method `._completed_session(session_id, started_at, elapsed_seconds, tag)`
 
 ---
 
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *Integration tests for Chronos CLI commands.*
 
-**Size**: `198` lines (`7289` bytes)
+**Size**: `265` lines (`10032` bytes)
 
 **Classes:**
 - `class TestCLIIntegration`
   - Method `.setUp()`
+  - Method `._session_row(session_id, title, started_at, tag, state, elapsed_seconds)`
+  - Method `._write_history(rows)`
   - Method `.run_cli(*args)`
   - Method `.test_full_session_flow()`
   - Method `.test_abort_session()`
+  - Method `.test_history_lists_newest_first_and_filters_the_window()`
+  - Method `.test_history_filters_by_tag_case_insensitively_and_limits()`
+  - Method `.test_history_reports_an_empty_history()`
   - Method `.test_commands_survive_legacy_encoded_stdout()`
   - Method `.test_invalid_usage_arguments_report_exit_code_2()`
   - Method `.test_start_rejects_unknown_task_binding()`

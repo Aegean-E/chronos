@@ -9,8 +9,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from chronos import __version__
-from chronos.analytics import compute_metrics
-from chronos.models import SessionState, TaskItem, TaskStatus, now_iso, parse_iso
+from chronos.analytics import compute_metrics, select_history
+from chronos.models import SessionState, TaskItem, TaskStatus, now_iso, parse_iso, try_parse_iso
 from chronos.orchestrator import SessionOrchestrator
 from chronos.repository import Repository
 from chronos.storage import StorageEngine
@@ -206,6 +206,39 @@ def cmd_stats(args: argparse.Namespace, repository: Repository) -> int:
     return 0
 
 
+def cmd_history(args: argparse.Namespace, repository: Repository) -> int:
+    sessions = select_history(
+        repository.list_sessions(),
+        days_window=args.days,
+        tag=args.tag,
+        limit=args.limit,
+    )
+
+    if args.json:
+        print(json.dumps([session.to_dict() for session in sessions], indent=2))
+        return 0
+
+    if not sessions:
+        print("No archived sessions found.")
+        return 0
+
+    print("══════════════════════════════════════════════════════════")
+    print(f"📜 CHRONOS HISTORY ({len(sessions)} session(s))")
+    print("══════════════════════════════════════════════════════════")
+    for session in sessions:
+        started = try_parse_iso(session.started_at)
+        stamp = started.astimezone().strftime("%Y-%m-%d %H:%M") if started else "unknown time"
+        icon = "✅" if session.state == SessionState.COMPLETED else "🛑"
+        mins = session.elapsed_seconds // 60
+        secs = session.elapsed_seconds % 60
+        print(
+            f"{icon} {stamp}  {session.title}  #{session.tag}  "
+            f"{mins}m {secs}s  ⚡{len(session.interruptions)}"
+        )
+    print("══════════════════════════════════════════════════════════")
+    return 0
+
+
 def _unique_task_id(repository: Repository) -> str:
     """Generate a task id that cannot overwrite an existing task."""
     while True:
@@ -293,6 +326,12 @@ def build_parser() -> argparse.ArgumentParser:
     stats_p.add_argument("--days", type=_positive_int, default=7, help="Lookback window in days (default: 7)")
     stats_p.add_argument("--json", action="store_true", help="Output JSON format")
 
+    history_p = subparsers.add_parser("history", help="List archived focus sessions")
+    history_p.add_argument("--days", type=_positive_int, default=None, help="Only sessions started within the last N days (default: all)")
+    history_p.add_argument("--tag", default=None, help="Only sessions recorded with this tag")
+    history_p.add_argument("--limit", type=_positive_int, default=20, help="Maximum number of sessions to show (default: 20)")
+    history_p.add_argument("--json", action="store_true", help="Output JSON format")
+
     task_p = subparsers.add_parser("task", help="Task micro-milestone manager")
     task_subs = task_p.add_subparsers(dest="task_command")
     task_add = task_subs.add_parser("add", help="Add a task")
@@ -337,6 +376,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_status(args, orchestrator)
     if args.command == "stats":
         return cmd_stats(args, repository)
+    if args.command == "history":
+        return cmd_history(args, repository)
     if args.command == "task":
         return cmd_task(args, repository)
 

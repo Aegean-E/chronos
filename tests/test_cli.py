@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
 
@@ -18,6 +19,22 @@ class TestCLIIntegration(unittest.TestCase):
     def setUp(self):
         self.temp_dir = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.temp_dir, ignore_errors=True)
+
+    def _session_row(self, session_id, title, started_at, tag="general",
+                     state="completed", elapsed_seconds=600):
+        return {
+            "session_id": session_id,
+            "title": title,
+            "target_minutes": 25,
+            "tag": tag,
+            "state": state,
+            "started_at": started_at,
+            "elapsed_seconds": elapsed_seconds,
+            "interruptions": [],
+        }
+
+    def _write_history(self, rows):
+        (self.temp_dir / "sessions.json").write_text(json.dumps(rows), encoding="utf-8")
 
     def run_cli(self, *args):
         stdout_buf = io.StringIO()
@@ -97,6 +114,54 @@ class TestCLIIntegration(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("No active focus session", out)
 
+    def test_history_lists_newest_first_and_filters_the_window(self):
+        now = datetime.now(timezone.utc)
+        self._write_history([
+            self._session_row("s-old", "Old work", (now - timedelta(days=10)).isoformat(),
+                              tag="coding"),
+            self._session_row("s-new", "Recent work", (now - timedelta(hours=2)).isoformat(),
+                              tag="review", elapsed_seconds=1200),
+        ])
+
+        code, out, _ = self.run_cli("history", "--days", "7")
+
+        self.assertEqual(code, 0)
+        self.assertIn("Recent work", out)
+        self.assertNotIn("Old work", out)
+
+        code, out, _ = self.run_cli("history", "--json")
+
+        self.assertEqual(code, 0)
+        rows = json.loads(out)
+        self.assertEqual([row["session_id"] for row in rows], ["s-new", "s-old"])
+        self.assertEqual(rows[0]["title"], "Recent work")
+
+    def test_history_filters_by_tag_case_insensitively_and_limits(self):
+        now = datetime.now(timezone.utc)
+        self._write_history([
+            self._session_row("s-code", "Code work", (now - timedelta(hours=1)).isoformat(),
+                              tag="coding"),
+            self._session_row("s-review", "Review work", (now - timedelta(hours=2)).isoformat(),
+                              tag="review"),
+        ])
+
+        code, out, _ = self.run_cli("history", "--tag", "CODING", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual([row["session_id"] for row in json.loads(out)], ["s-code"])
+
+        code, out, _ = self.run_cli("history", "--limit", "1", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual([row["session_id"] for row in json.loads(out)], ["s-code"])
+
+    def test_history_reports_an_empty_history(self):
+        code, out, _ = self.run_cli("history")
+        self.assertEqual(code, 0)
+        self.assertIn("No archived sessions found", out)
+
+        code, out, _ = self.run_cli("history", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out), [])
+
     def test_commands_survive_legacy_encoded_stdout(self):
         buffer = io.BytesIO()
         wrapper = io.TextIOWrapper(buffer, encoding="cp1252")
@@ -115,6 +180,8 @@ class TestCLIIntegration(unittest.TestCase):
         cases = [
             ["stats", "--days", "0"],
             ["stats", "--days", "-3"],
+            ["history", "--days", "0"],
+            ["history", "--limit", "0"],
             ["start", "title", "--duration", "0"],
             ["task", "add", "title", "--estimate", "0"],
             ["interrupt", "meeting", "--duration", "-1"],
