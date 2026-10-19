@@ -28,7 +28,7 @@ def _configure_output_encoding() -> None:
             continue
         try:
             reconfigure(encoding="utf-8", errors="replace")
-        except (ValueError, OSError):
+        except (ValueError, OSError):  # hygiene: allow best-effort re-encode; an odd stream must not abort the CLI
             pass
 
 

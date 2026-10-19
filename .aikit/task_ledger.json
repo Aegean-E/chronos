@@ -1,12 +1,12 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-review-fixes-v3",
+    "task_id": "task-chronos-hygiene-fixes-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792360521.2106228,
-    "completed_at": 1792360692.2430835
+    "updated_at": 1792432928.6237967,
+    "completed_at": 1792432942.9373288
   },
   "checkpoints": [
     {
@@ -188,6 +188,51 @@
       "status": "completed",
       "timestamp": 1792360692.2430844,
       "timestamp_str": "2026-10-19 00:58:12"
+    },
+    {
+      "task_id": "task-chronos-hygiene-fixes-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/2] Plan: document the four deliberate best-effort error discards (stdout re-encode, directory fsync open/flush, quarantine move) with `hygiene: allow` markers so the widened hygiene gate passes again, and refresh the generated codebase map in the same commit",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432789.716704,
+      "timestamp_str": "2026-10-19 20:59:49",
+      "impact_assessment": {
+        "why": "AIKit commit b6e5465 widened the hygiene scan to silent excepts; chronos now fails 3/4 gates with four silent-except findings, all of which are deliberate best-effort operations whose failure must not break a command",
+        "benefits": "aikit check chronos returns to 4/4; each deliberate discard carries its reason in the code; no behaviour change",
+        "risks": "contract: none (comments only); dependency: none (stdlib only); concurrency: none; state: none (code unchanged, generated map refreshed)",
+        "mitigation": "comments only on the handler lines the scanner reports; re-run the full test suite and aikit check chronos before the commit"
+      }
+    },
+    {
+      "task_id": "task-chronos-hygiene-fixes-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/2] Annotated the four deliberate best-effort discards on the exact handler lines the scan reports (stdout re-encode, directory fsync open and flush, quarantine move); no code path changed; regenerated the codebase map",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432901.1663778,
+      "timestamp_str": "2026-10-19 21:01:41"
+    },
+    {
+      "task_id": "task-chronos-hygiene-fixes-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[2/2] Phase 4 green on the working tree: 54/54 tests in 1.2s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; codebase map regenerated; no ADR needed (comments only, no contract, dependency, data format or architecture change)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1792432928.6237967,
+      "timestamp_str": "2026-10-19 21:02:08"
+    },
+    {
+      "task_id": "task-chronos-hygiene-fixes-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-hygiene-fixes-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792432942.9373302,
+      "timestamp_str": "2026-10-19 21:02:22"
     }
   ]
 }

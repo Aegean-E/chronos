@@ -66,9 +66,9 @@ class StorageEngine:
             with closing(os.open(str(directory), os.O_RDONLY)) as fd:  # hygiene: allow directory fd is closed by closing()
                 try:
                     os.fsync(fd)
-                except OSError:
+                except OSError:  # hygiene: allow the written file is already fsynced; the directory flush is best-effort
                     pass
-        except OSError:
+        except OSError:  # hygiene: allow unopenable directories cannot be flushed; the rename already stands
             pass
 
     def read_json_safe(self, path: Path, default: Any) -> Any:
@@ -106,7 +106,7 @@ class StorageEngine:
         corrupt_dest = path.parent / f".corrupt_{path.name}_{time.time_ns()}"
         try:
             os.replace(path, corrupt_dest)
-        except OSError:
+        except OSError:  # hygiene: allow quarantine is best-effort; the file stays in place, never lost
             pass
 
     def save_active_session(self, session_data: Optional[Dict[str, Any]]) -> None:

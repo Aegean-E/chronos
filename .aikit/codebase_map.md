@@ -8,7 +8,8 @@
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `15`
 - **Total Classes**: `15`
-- **Total Functions / Methods**: `24`
+- **Total Top-Level Functions**: `24`
+- **Total Class Methods**: `91`
 - **Total Source Lines**: `1779`
 
 ---
@@ -35,7 +36,7 @@
 ### [`chronos/cli.py`](chronos/cli.py)
 > *Command-line interface for Chronos.*
 
-**Size**: `347` lines (`14602` bytes)
+**Size**: `347` lines (`14680` bytes)
 
 **Functions:**
 - `def _configure_output_encoding()` - *Keep emoji output from crashing when the terminal cannot encode it.*
@@ -125,7 +126,7 @@
 ### [`chronos/storage.py`](chronos/storage.py)
 > *Crash-resilient, atomic JSON storage engine for Chronos.*
 
-**Size**: `125` lines (`4889` bytes)
+**Size**: `125` lines (`5146` bytes)
 
 **Classes:**
 - `class StorageEngine` - *Manages disk persistence for sessions and tasks with atomic writes.*
