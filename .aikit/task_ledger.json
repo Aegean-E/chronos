@@ -6,19 +6,9 @@
     "active_phase": 5,
     "status": "completed",
     "updated_at": 1792440044.6907873,
-    "completed_at": 1792440049.0003967
+    "completed_at": 1792440105.5609007
   },
   "checkpoints": [
-    {
-      "task_id": "task-chronos-review-fixes-v2",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Failing-first regression tests (14 new; 24 -> 39 total) captured all 8 defects, then fixed: UTF-8 output reconfiguration, shared parse_iso in models (naive read as UTC, malformed contributes zero), tolerant from_dict coercion and interruption filtering, quarantine only on ValueError, all-history streak, abort task crediting, positive-int argument validation (exit 2), idempotent task done",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792357077.7992992,
-      "timestamp_str": "2026-10-18 23:57:57"
-    },
     {
       "task_id": "task-chronos-review-fixes-v2",
       "phase": "phase 4",
@@ -233,6 +223,15 @@
       "status": "completed",
       "timestamp": 1792440049.0003984,
       "timestamp_str": "2026-10-19 23:00:49"
+    },
+    {
+      "task_id": "task-chronos-task-mgmt-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-task-mgmt-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1792440105.5609019,
+      "timestamp_str": "2026-10-19 23:01:45"
     }
   ]
 }
