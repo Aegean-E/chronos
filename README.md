@@ -27,6 +27,7 @@ chronos/
 ├── README.md
 ├── pyproject.toml            <- build and package configuration
 ├── chronos/                  <- core package source code
+├── LICENSE
 └── tests/                    <- unit and integration test suite
 ```
 
