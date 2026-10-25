@@ -7,11 +7,13 @@ name = "chronos-cli"
 version = "0.1.0"
 description = "A lightweight developer focus and session orchestrator"
 readme = "README.md"
+license = { text = "AGPL-3.0-or-later" }
 requires-python = ">=3.10"
-authors = [{ name = "AI Assistant" }]
+authors = [{ name = "Aegean-E", email = "aegean-licensing@proton.me" }]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
 ]
 
 [project.scripts]
