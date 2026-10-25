@@ -27,6 +27,7 @@ chronos/
 ├── .aikit/                   <- this project's memory: record, ledger, decisions
 ├── .gitignore                <- transient AIKit state excluded
 ├── README.md
+├── COMMERCIAL.md
 ├── pyproject.toml            <- build and package configuration
 ├── chronos/                  <- core package source code
 ├── LICENSE
