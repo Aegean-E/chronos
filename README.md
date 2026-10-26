@@ -1,6 +1,6 @@
 # chronos
 
-[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/Aegean-E/AIKit)
+[![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
 
 Chronos is a lightweight, local-first developer focus and session orchestrator. It helps developers track deep-work sessions, manage micro-milestones, log interruptions, and generate productivity insights with zero external dependencies.
 
@@ -31,6 +31,8 @@ chronos/
 ├── pyproject.toml            <- build and package configuration
 ├── chronos/                  <- core package source code
 ├── LICENSE
+├── LICENSES/                 <- REUSE license texts
+├── REUSE.toml                <- Machine-readable SPDX metadata
 └── tests/                    <- unit and integration test suite
 ```
 
@@ -128,4 +130,8 @@ stats window.
 - **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined (with collision-free names) and recovered from the atomic backup.
 - **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
 
+> **License history:** versions up to and including `v0.1.0-agpl` remain available under GNU AGPL-3.0.
 
+## 📜 License
+
+Free for personal use under the Aegean License 1.1 (AL-1.1); see [LICENSE](LICENSE). Any commercial use needs the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).

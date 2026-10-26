@@ -52,4 +52,8 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Add `chronos task show <id>` (text and `--json` view with estimate, spent time, status, and linked historical focus sessions), `chronos task remove <id>` (with `rm` and `delete` aliases, preventing removal of any task currently bound to an active session), `chronos task clear` (pruning all completed tasks atomically), and `--status` / `--json` flags to `chronos task list`. Backed by atomic repository operations `delete_task` and `clear_completed_tasks`.
 - **Consequences**: Users gain complete lifecycle control over tasks with safety invariants against deleting in-flight session bindings. No existing commands break and the on-disk storage format remains backward-compatible.
 
+## Licensing migration (v0.1.0-agpl)
 
+- New versions use the Aegean License 1.1 (AL-1.1); versions up to and including `v0.1.0-agpl` remain under GNU AGPL-3.0.
+- Rights holder: AegeanWorks; commercial use under ACL-1.0.
+- Counsel review of the 1.1 texts remains pending.
