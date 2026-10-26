@@ -130,8 +130,6 @@ stats window.
 - **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined (with collision-free names) and recovered from the atomic backup.
 - **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
 
-> **License history:** versions up to and including `v0.1.0-agpl` remain available under GNU AGPL-3.0.
-
 ## 📜 License
 
 Free for personal use under the Aegean License 1.1 (AL-1.1); see [LICENSE](LICENSE). Any commercial use needs the Aegean Commercial License 1.0 (ACL-1.0); see [COMMERCIAL.md](COMMERCIAL.md).
