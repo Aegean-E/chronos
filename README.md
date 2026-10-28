@@ -1,8 +1,8 @@
 # chronos
 
 <!-- aegean:media:start -->
-<p align="center"><img src="assets/logo.svg" alt="Chronos logo" width="96" height="96"></p>
-<p align="center"><img src="assets/social-preview.svg" alt="Chronos social preview" width="100%"></p>
+<p align="center"><img src="assets/logo.png" alt="Chronos logo" width="96" height="96"></p>
+<p align="center"><img src="assets/social-preview.png" alt="Chronos social preview" width="100%"></p>
 <!-- aegean:media:end -->
 
 [![Built with AIKit](https://img.shields.io/badge/built%20with-AIKit-6f42c1)](https://github.com/AegeanWorks/AIKit)
