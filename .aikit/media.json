@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "name": "chronos",
+  "repo": "Chronos",
+  "has_ui": false,
+  "ui_kind": "cli",
+  "palette": [
+    "#0b1220",
+    "#1e293b",
+    "#f472b6",
+    "#f8fafc"
+  ],
+  "assets": {
+    "logo": {
+      "path": "assets/logo.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:22",
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "CH monogram in pink, dark purple, aligned, legible.",
+        "score": 93,
+        "reviewed_at": "2026-10-28T08:10:42"
+      }
+    },
+    "social_preview": {
+      "path": "assets/social-preview.svg",
+      "status": "approved",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:22",
+      "review": {
+        "status": "approved",
+        "reviewer": "subagent:vision-review",
+        "method": "vision",
+        "notes": "CH icon, title, time-tracker description, CLI tag, legible.",
+        "score": 93,
+        "reviewed_at": "2026-10-28T08:10:42"
+      }
+    },
+    "social_preview_png": {
+      "path": "assets/social-preview.png",
+      "status": "pending_review",
+      "commit": "",
+      "generated_at": "2026-10-28T08:02:23",
+      "review": null
+    }
+  },
+  "screenshots": []
+}
