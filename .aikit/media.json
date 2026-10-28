@@ -5,53 +5,48 @@
   "has_ui": false,
   "ui_kind": "cli",
   "palette": [
-    "#0b1220",
-    "#1e293b",
+    "#0f0a14",
+    "#2a1533",
     "#f472b6",
-    "#f8fafc"
+    "#38bdf8"
   ],
+  "motif": "timer",
+  "layout": "terminal",
   "assets": {
     "logo": {
       "path": "assets/logo.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:22",
+      "generated_at": "2026-10-28T08:46:51",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "CH monogram in pink, dark purple, aligned, legible.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "CH stopwatch, distinct from tempo timer",
+        "score": 89,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview": {
       "path": "assets/social-preview.svg",
       "status": "approved",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:22",
+      "generated_at": "2026-10-28T08:46:51",
       "review": {
         "status": "approved",
         "reviewer": "subagent:vision-review",
         "method": "vision",
-        "notes": "CH icon, title, time-tracker description, CLI tag, legible.",
-        "score": 93,
-        "reviewed_at": "2026-10-28T08:10:42"
+        "notes": "Consistent template, legible",
+        "score": 89,
+        "reviewed_at": "2026-10-28T08:58:20"
       }
     },
     "social_preview_png": {
       "path": "assets/social-preview.png",
-      "status": "approved",
+      "status": "pending_review",
       "commit": "",
-      "generated_at": "2026-10-28T08:02:23",
-      "review": {
-        "status": "approved",
-        "reviewer": "subagent:vision-review",
-        "method": "structural",
-        "notes": "Rendered from the approved 1280x640 social SVG; exact dimensions verified.",
-        "score": null,
-        "reviewed_at": "2026-10-28T08:16:21"
-      }
+      "generated_at": "2026-10-28T08:46:52",
+      "review": null
     }
   },
   "screenshots": []

@@ -1,20 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="title desc" data-motif="timer" data-layout="terminal">
   <title id="title">Chronos social preview</title>
   <desc id="desc">Chronos is a lightweight, local-first developer focus and session orchestrator. It helps developers track deep-work sessions, manage micro-milestones, log interruptions, and generate productivity insights with zero external dependencies.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#1e293b"/></linearGradient>
-    <radialGradient id="glow" cx="0.2" cy="0.15" r="0.9"><stop offset="0" stop-color="#f472b6" stop-opacity="0.30"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f0a14"/><stop offset="1" stop-color="#2a1533"/></linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.12" r="0.95"><stop offset="0" stop-color="#f472b6" stop-opacity="0.28"/><stop offset="1" stop-color="#f472b6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="band" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f472b6"/><stop offset="1" stop-color="#38bdf8"/></linearGradient>
   </defs>
   <rect width="1280" height="640" fill="url(#bg)"/>
   <rect width="1280" height="640" fill="url(#glow)"/>
-  <g opacity="0.16" stroke="#f8fafc">
-    <path d="M0 160h1280M0 320h1280M0 480h1280M256 0v640M512 0v640M768 0v640M1024 0v640"/>
+  
+  <g opacity="0.15" stroke="#F8FAFC">
+    <path d="M0 128H1280M0 256H1280M0 384H1280M0 512H1280M256 0V640M512 0V640M768 0V640M1024 0V640"/>
   </g>
-  <rect x="64" y="112" width="176" height="176" rx="42" fill="#0b1220" stroke="#f472b6" stroke-opacity="0.55" stroke-width="2"/>
-  <circle cx="152" cy="200" r="58" fill="none" stroke="#f472b6" stroke-opacity="0.45" stroke-width="2"/>
-  <text x="152" y="224" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700" fill="#f472b6">CH</text>
-  <text x="300" y="192" font-family="Segoe UI, Arial, sans-serif" font-size="72" font-weight="700" fill="#f8fafc">Chronos</text>
-  <text x="300" y="250" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#f8fafc" fill-opacity="0.78">Chronos is a lightweight, local-first developer</text><text x="300" y="298" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#f8fafc" fill-opacity="0.78">focus and session orchestrator. It helps developers</text><text x="300" y="346" font-family="Segoe UI, Arial, sans-serif" font-size="34" fill="#f8fafc" fill-opacity="0.78">track deep-work sessions, manage micro-milestones,</text>
-  <text x="64" y="560" font-family="Segoe UI, Arial, sans-serif" font-size="22" letter-spacing="6" fill="#f8fafc" fill-opacity="0.55">AEGEANWORKS · CLI</text>
-  <text x="1216" y="560" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="22" fill="#f472b6">github.com/AegeanWorks/Chronos</text>
+  <g transform="translate(1040 320) scale(1.8)" opacity="0.42"><circle cx="0" cy="8" r="46" fill="none" stroke="#f472b6" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-16 -52H16M0 -52V-38" fill="none" stroke="#f472b6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M0 8V-16M0 8L24 22" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M-46 8H-38M38 8H46M0 54V46" fill="none" stroke="#f472b6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+  <text x="78" y="206" font-family="Consolas, monospace" font-size="20" fill="#f472b6">$ open Chronos</text><text x="78" y="292" font-family="Segoe UI, Arial, sans-serif" font-size="76" font-weight="700" fill="#F8FAFC">Chronos</text>
+  <text x="80" y="348" font-family="Consolas, monospace" font-size="25" fill="#F8FAFC" fill-opacity="0.72">Chronos is a lightweight, local-first developer</text><text x="80" y="388" font-family="Consolas, monospace" font-size="25" fill="#F8FAFC" fill-opacity="0.72">focus and session orchestrator. It helps</text><text x="80" y="428" font-family="Consolas, monospace" font-size="25" fill="#F8FAFC" fill-opacity="0.72">developers track deep-work sessions, manage</text>
+  <rect x="80" y="502" width="76" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="118.0" y="527" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">aikit</text><rect x="148" y="502" width="56" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="176.0" y="527" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">cli</text><rect x="456" y="502" width="176" height="38" rx="19" fill="#0B1220" fill-opacity="0.55" stroke="#94A3B8" stroke-opacity="0.35"/><text x="544.0" y="527" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="15" fill="#F8FAFC" fill-opacity="0.82">developer tools</text>
+  <text x="76" y="592" font-family="Segoe UI, Arial, sans-serif" font-size="19" letter-spacing="6" fill="#F8FAFC" fill-opacity="0.50">AEGEANWORKS</text>
+  <text x="1204" y="592" text-anchor="end" font-family="Segoe UI, Arial, sans-serif" font-size="20" fill="#f472b6">github.com/AegeanWorks/Chronos</text>
 </svg>
