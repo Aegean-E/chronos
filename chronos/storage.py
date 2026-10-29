@@ -5,11 +5,20 @@ import os
 import shutil
 import tempfile
 import time
-from contextlib import closing
+from contextlib import closing, contextmanager
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterator, Optional
+
+if os.name == "nt":
+    import msvcrt
+else:
+    import fcntl
 
 _UNREADABLE = object()
+
+
+class StorageLockError(RuntimeError):
+    """Raised when another process holds the data-directory lock."""
 
 
 class StorageEngine:
@@ -21,6 +30,48 @@ class StorageEngine:
         self.active_path = self.base_dir / "active_session.json"
         self.history_path = self.base_dir / "sessions.json"
         self.tasks_path = self.base_dir / "tasks.json"
+
+    @contextmanager
+    def locked(self, timeout: float = 5.0) -> Iterator[None]:
+        """Serialize commands that share this data directory.
+
+        Atomic replace prevents a torn file; this lock prevents a lost update when two
+        processes read the same JSON and write it back. The OS releases the lock when the
+        process exits, so a crash leaves a harmless lock file rather than a stuck one.
+        """
+        lock_path = self.base_dir / ".lock"
+        with open(lock_path, "a+b") as handle:
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write(b"\0")
+                handle.flush()
+            deadline = time.monotonic() + timeout
+            while True:
+                handle.seek(0)
+                try:
+                    if os.name == "nt":
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+                    else:
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise StorageLockError(
+                            f"Another chronos process is using {self.base_dir} "
+                            f"(lock wait exceeded {timeout:g}s)."
+                        ) from None
+                    time.sleep(0.02)
+            try:
+                yield
+            finally:
+                try:
+                    handle.seek(0)
+                    if os.name == "nt":
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                except OSError:  # hygiene: allow release is best-effort when the handle closes
+                    pass
 
     def write_json_atomic(self, path: Path, data: Any) -> None:
         """Write data to path atomically using a unique temp file, fsync, and replace."""

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from chronos.storage import StorageEngine
+from chronos.storage import StorageEngine, StorageLockError
 
 
 class TestStorageEngine(unittest.TestCase):
@@ -46,6 +46,17 @@ class TestStorageEngine(unittest.TestCase):
 
         self.engine.save_active_session(None)
         self.assertIsNone(self.engine.load_active_session())
+
+    def test_data_directory_lock_is_exclusive(self):
+        # ADR-001/ADR-007: a second process must not read-modify-write the same data directory.
+        other = StorageEngine(self.temp_dir)
+        with self.engine.locked(timeout=0.2):
+            with self.assertRaises(StorageLockError):
+                with other.locked(timeout=0.05):
+                    pass
+
+        with other.locked(timeout=0.2):
+            self.assertTrue((self.temp_dir / ".lock").exists())
 
     def test_read_json_safe_survives_invalid_utf8_bytes(self):
         target = self.temp_dir / "history.json"

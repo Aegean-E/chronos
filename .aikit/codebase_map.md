@@ -7,10 +7,10 @@
 
 ## 📊 Codebase Metrics
 - **Total Python Modules**: `15`
-- **Total Classes**: `15`
-- **Total Top-Level Functions**: `26`
-- **Total Class Methods**: `110`
-- **Total Source Lines**: `2288`
+- **Total Classes**: `16`
+- **Total Top-Level Functions**: `27`
+- **Total Class Methods**: `113`
+- **Total Source Lines**: `2368`
 
 ---
 
@@ -37,7 +37,7 @@
 ### [`chronos/cli.py`](chronos/cli.py)
 > *Command-line interface for Chronos.*
 
-**Size**: `482` lines (`21108` bytes)
+**Size**: `492` lines (`21451` bytes)
 
 **Functions:**
 - `def _configure_output_encoding()` - *Keep emoji output from crashing when the terminal cannot encode it.*
@@ -57,6 +57,7 @@
 - `def _unique_task_id(repository)` - *Generate a task id that cannot overwrite an existing task.*
 - `def cmd_task(args, repository, orchestrator)`
 - `def build_parser()`
+- `def _dispatch(args, repository, orchestrator)`
 - `def main(argv)`
 
 ---
@@ -130,11 +131,13 @@
 ### [`chronos/storage.py`](chronos/storage.py)
 > *Crash-resilient, atomic JSON storage engine for Chronos.*
 
-**Size**: `125` lines (`5146` bytes)
+**Size**: `176` lines (`7176` bytes)
 
 **Classes:**
+- `class StorageLockError` - *Raised when another process holds the data-directory lock.*
 - `class StorageEngine` - *Manages disk persistence for sessions and tasks with atomic writes.*
   - Method `.__init__(base_dir)`
+  - Method `.locked(timeout)` - *Serialize commands that share this data directory.*
   - Method `.write_json_atomic(path, data)` - *Write data to path atomically using a unique temp file, fsync, and replace.*
   - Method `._fsync_directory(directory)` - *Flush the directory entry on POSIX so a rename survives power loss.*
   - Method `.read_json_safe(path, default)` - *Read JSON from path, recovering from backup or quarantining corrupt content.*
@@ -179,7 +182,7 @@
 ### [`tests/test_cli.py`](tests/test_cli.py)
 > *Integration tests for Chronos CLI commands.*
 
-**Size**: `440` lines (`17066` bytes)
+**Size**: `448` lines (`17472` bytes)
 
 **Classes:**
 - `class TestCLIIntegration`
@@ -187,6 +190,7 @@
   - Method `._session_row(session_id, title, started_at, tag, state, elapsed_seconds)`
   - Method `._write_history(rows)`
   - Method `.run_cli(*args)`
+  - Method `.test_every_command_holds_the_data_directory_lock()`
   - Method `.test_full_session_flow()`
   - Method `.test_abort_session()`
   - Method `.test_history_lists_newest_first_and_filters_the_window()`
@@ -286,7 +290,7 @@
 ### [`tests/test_storage.py`](tests/test_storage.py)
 > *Unit tests for Chronos atomic storage engine.*
 
-**Size**: `80` lines (`2945` bytes)
+**Size**: `91` lines (`3437` bytes)
 
 **Classes:**
 - `class TestStorageEngine`
@@ -294,6 +298,7 @@
   - Method `.test_atomic_write_and_read()`
   - Method `.test_backup_and_recovery_on_corrupt_file()`
   - Method `.test_active_session_lifecycle()`
+  - Method `.test_data_directory_lock_is_exclusive()`
   - Method `.test_read_json_safe_survives_invalid_utf8_bytes()`
   - Method `.test_repeated_quarantine_does_not_overwrite_earlier_corrupt_file()`
   - Method `.test_read_json_safe_does_not_move_file_on_oserror()`

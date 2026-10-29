@@ -7,7 +7,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import nullcontext, redirect_stderr, redirect_stdout
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -43,6 +43,14 @@ class TestCLIIntegration(unittest.TestCase):
         with redirect_stdout(stdout_buf), redirect_stderr(stderr_buf):
             exit_code = main(cmd_args)
         return exit_code, stdout_buf.getvalue(), stderr_buf.getvalue()
+
+    def test_every_command_holds_the_data_directory_lock(self):
+        # ADR-007: the CLI lock covers the whole read-modify-write command, not just a write.
+        with patch("chronos.cli.StorageEngine.locked", return_value=nullcontext()) as locked:
+            exit_code, _, _ = self.run_cli("task", "list")
+
+        self.assertEqual(exit_code, 0)
+        locked.assert_called_once_with()
 
     def test_full_session_flow(self):
         # 1. Start task

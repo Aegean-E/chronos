@@ -1,184 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-task-mgmt-v1",
+    "task_id": "task-chronos-locking-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1792440044.6907873,
-    "completed_at": 1792440105.5609007
+    "updated_at": 1793283899.0283573,
+    "owner": "opencode:reforge-followup",
+    "started_by": "opencode:reforge-followup",
+    "continuations": [],
+    "completed_at": 1793283910.2265282
   },
   "checkpoints": [
-    {
-      "task_id": "task-chronos-review-fixes-v2",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] Phase 4 green on staged state: 39/39 tests in 0.6s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-003 recorded; staged diff reviewed",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792357092.2906992,
-      "timestamp_str": "2026-10-18 23:58:12"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v2",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-review-fixes-v2' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792357101.158783,
-      "timestamp_str": "2026-10-18 23:58:21"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v3",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: third adversarial review; harden session lifecycle idempotency, active-state type/state validation, task-binding and interruption validation, deterministic malformed-timestamp handling, and storage quarantine/durability",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792359850.474865,
-      "timestamp_str": "2026-10-19 00:44:10",
-      "impact_assessment": {
-        "why": "Reproduced defects: finishing a stale COMPLETED active session double-credits its bound task; a valid-JSON non-object active file raises AttributeError; start --task silently accepts unknown task IDs; negative interruption durations are stored; malformed timestamps are excluded only by clock-ordering accident; task IDs can collide and overwrite an existing task; quarantine filenames collide within one second",
-        "benefits": "Lifecycle commands become idempotent and cannot double-count task time; corrupt active-state shapes degrade gracefully; typos in task binding fail loudly; invalid durations are rejected with usage exit 2; malformed history rows are skipped deterministically; task IDs cannot overwrite unrelated tasks; no quarantine data loss",
-        "risks": "contract: unknown --task and negative --duration now fail, stale completed active states are ignored; dependency: none added (stdlib only); concurrency: still last-writer-wins, no lock added; state: on-disk JSON schema unchanged",
-        "mitigation": "Failing-first regression tests for every defect, then the minimal fix; full unittest suite and aikit check chronos 4/4 before delivery; ADR-004 records contract changes"
-      }
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v3",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Failing-first regression tests added (39 -> 54) for stale lifecycle double-credit, non-object active state, unknown task binding, empty title, invalid interruption input, malformed/missing timestamps, negative stored values, task-id collision, quarantine collisions, and --version; then fixed orchestrator, models, analytics, CLI, and storage",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792360505.2637556,
-      "timestamp_str": "2026-10-19 00:55:05"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v3",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] Phase 4 green on working tree: 54/54 tests in 0.7s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-004 recorded; README and codebase map synchronized",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792360521.2106228,
-      "timestamp_str": "2026-10-19 00:55:21"
-    },
-    {
-      "task_id": "task-chronos-review-fixes-v3",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-review-fixes-v3' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792360692.2430844,
-      "timestamp_str": "2026-10-19 00:58:12"
-    },
-    {
-      "task_id": "task-chronos-hygiene-fixes-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/2] Plan: document the four deliberate best-effort error discards (stdout re-encode, directory fsync open/flush, quarantine move) with `hygiene: allow` markers so the widened hygiene gate passes again, and refresh the generated codebase map in the same commit",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792432789.716704,
-      "timestamp_str": "2026-10-19 20:59:49",
-      "impact_assessment": {
-        "why": "AIKit commit b6e5465 widened the hygiene scan to silent excepts; chronos now fails 3/4 gates with four silent-except findings, all of which are deliberate best-effort operations whose failure must not break a command",
-        "benefits": "aikit check chronos returns to 4/4; each deliberate discard carries its reason in the code; no behaviour change",
-        "risks": "contract: none (comments only); dependency: none (stdlib only); concurrency: none; state: none (code unchanged, generated map refreshed)",
-        "mitigation": "comments only on the handler lines the scanner reports; re-run the full test suite and aikit check chronos before the commit"
-      }
-    },
-    {
-      "task_id": "task-chronos-hygiene-fixes-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/2] Annotated the four deliberate best-effort discards on the exact handler lines the scan reports (stdout re-encode, directory fsync open and flush, quarantine move); no code path changed; regenerated the codebase map",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792432901.1663778,
-      "timestamp_str": "2026-10-19 21:01:41"
-    },
-    {
-      "task_id": "task-chronos-hygiene-fixes-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[2/2] Phase 4 green on the working tree: 54/54 tests in 1.2s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; codebase map regenerated; no ADR needed (comments only, no contract, dependency, data format or architecture change)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792432928.6237967,
-      "timestamp_str": "2026-10-19 21:02:08"
-    },
-    {
-      "task_id": "task-chronos-hygiene-fixes-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-hygiene-fixes-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792432942.9373302,
-      "timestamp_str": "2026-10-19 21:02:22"
-    },
-    {
-      "task_id": "task-chronos-history-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: add a `history` command that lists archived sessions newest first with optional --days, --tag, --limit and --json, backed by a pure select_history helper and covered by failing-first unit and CLI tests",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792433039.822833,
-      "timestamp_str": "2026-10-19 21:03:59",
-      "impact_assessment": {
-        "why": "Archived sessions are write-only today: finish/abort store them and stats aggregates them, but no command lists them, so a developer cannot review individual sessions, filter by tag or inspect notes; Repository.list_sessions already exists with no CLI consumer",
-        "benefits": "Users can review recent sessions newest first, narrow by elapsed window or tag, and integrate via JSON; the existing analytics filter semantics are reused so malformed rows stay skipped",
-        "risks": "contract: new command and options only, existing commands unchanged; dependency: none (stdlib only); concurrency: read-only, no new writes or locks; state: on-disk schema unchanged",
-        "mitigation": "Failing-first unit tests for ordering/window/tag/limit/malformed rows and CLI tests for text/JSON/empty/invalid input; full aikit check chronos 4/4 before the commit; ADR-005 records the new command"
-      }
-    },
-    {
-      "task_id": "task-chronos-history-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/3] Failing-first tests added (54 -> 62: 5 unit for select_history ordering/window/tag/limit/future+malformed rows, 3 CLI for text/JSON/filtering/empty plus invalid --days/--limit usage), then implemented select_history in analytics and the history command in cli; all 62 tests green in 0.8s",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792433086.87872,
-      "timestamp_str": "2026-10-19 21:04:46"
-    },
-    {
-      "task_id": "task-chronos-history-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[3/3] Phase 4 green on the working tree: 62/62 tests in 0.8s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-005 recorded; README history section and codebase map synchronized; smoke-tested start/interrupt/finish/abort/history text+JSON in a throwaway data dir",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792433115.4676723,
-      "timestamp_str": "2026-10-19 21:05:15"
-    },
-    {
-      "task_id": "task-chronos-history-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-history-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792433117.7170396,
-      "timestamp_str": "2026-10-19 21:05:17"
-    },
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/3] Plan: expand task management with task delete/rm, task list filtering & JSON output, and detailed task show with bound session history",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792439757.6699626,
-      "timestamp_str": "2026-10-19 22:55:57",
-      "impact_assessment": {
-        "why": "Developers can create, list, and complete tasks, but cannot delete obsolete tasks, inspect task history and linked focus sessions, or export/filter task lists programmatically via CLI",
-        "benefits": "Provides full task lifecycle management (delete/rm, status filtering, show with linked session breakdown, json export) while preserving atomic persistence and preventing deletion of tasks bound to active sessions",
-        "risks": "contract: new subcommands and options added to 'task', existing commands remain backward-compatible; dependency: none added (stdlib only); concurrency: atomic writes maintained; state: on-disk JSON schema unchanged",
-        "mitigation": "Failing-first tests for repository and CLI, rejection of deletion when an active session is bound, full Phase 4 checks (aikit check chronos) before commit, ADR-006 recorded"
-      }
-    },
     {
       "task_id": "task-chronos-task-mgmt-v1",
       "phase": "phase 2",
@@ -232,6 +65,192 @@
       "status": "completed",
       "timestamp": 1792440105.5609019,
       "timestamp_str": "2026-10-19 23:01:45"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge run",
+      "phase_num": 3,
+      "description": "run started (start=3, step=3, stop=None)",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283080.9248796,
+      "timestamp_str": "2026-10-29 17:11:20",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 1",
+      "phase_num": 3,
+      "description": "Reforge stage 1: window 3, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283084.1777606,
+      "timestamp_str": "2026-10-29 17:11:24",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 2",
+      "phase_num": 3,
+      "description": "Reforge stage 2: window 6, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 1 binary not analysed",
+      "files_affected": [
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793283110.019104,
+      "timestamp_str": "2026-10-29 17:11:50",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 3",
+      "phase_num": 3,
+      "description": "Reforge stage 3: window 9, 3 commit(s), 2 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 5 binary not analysed",
+      "files_affected": [
+        "assets/artwork.jpg",
+        "assets/logo.jpg",
+        "assets/logo.png",
+        "assets/social-preview.jpg",
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793283140.3006074,
+      "timestamp_str": "2026-10-29 17:12:20",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 4",
+      "phase_num": 3,
+      "description": "Reforge stage 4: window 21, 12 commit(s), 11 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired, 1 binary not analysed",
+      "files_affected": [
+        "assets/social-preview.png"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793283187.8708758,
+      "timestamp_str": "2026-10-29 17:13:07",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 5",
+      "phase_num": 3,
+      "description": "Reforge stage 5: window 27, 6 commit(s), 15 file(s) reviewed (unreviewed), 4 finding(s), 0 repaired (reliability=4)",
+      "files_affected": [
+        "chronos/cli.py",
+        "chronos/storage.py"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793283220.1373236,
+      "timestamp_str": "2026-10-29 17:13:40",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 6",
+      "phase_num": 3,
+      "description": "Reforge stage 6: window 33, 6 commit(s), 15 file(s) reviewed (unreviewed), 3 finding(s), 0 repaired (regression=3)",
+      "files_affected": [
+        "chronos/storage.py",
+        "chronos/cli.py"
+      ],
+      "status": "in_progress",
+      "timestamp": 1793283307.9639695,
+      "timestamp_str": "2026-10-29 17:15:07",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: window 35, 2 commit(s), 9 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283337.2747478,
+      "timestamp_str": "2026-10-29 17:15:37",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: run stopped at stage 7; resume it with `reforge resume`",
+      "files_affected": [],
+      "status": "suspended",
+      "timestamp": 1793283382.19552,
+      "timestamp_str": "2026-10-29 17:16:22",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: run resumed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283625.740014,
+      "timestamp_str": "2026-10-29 17:20:25",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: run stopped at stage 7; resume it with `reforge resume`",
+      "files_affected": [],
+      "status": "suspended",
+      "timestamp": 1793283636.5481637,
+      "timestamp_str": "2026-10-29 17:20:36",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "task-chronos-locking-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/3] Plan: serialize concurrent CLI processes with a stdlib advisory lock on the data directory, resolving the ADR-001 file-locking promise",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283767.8542535,
+      "timestamp_str": "2026-10-29 17:22:47",
+      "agent": "opencode:reforge-followup",
+      "impact_assessment": {
+        "why": "ADR-001 promises file locking, but StorageEngine only does atomic replace; concurrent CLI processes can lose repository updates through read-modify-write races (Reforge finding .aikit/decisions.md:12)",
+        "benefits": "Concurrent chronos commands serialize on one data directory; task/session updates cannot be silently lost; the documented storage contract becomes true",
+        "risks": "contract: adds StorageEngine.locked/StorageLockError and wraps CLI dispatch, no CLI surface or JSON schema change; dependency: stdlib fcntl/msvcrt only, no new packages; concurrency: exclusive per-data-directory lock with timeout, read-only commands also serialize; state: adds a .lock file beside sessions.json, no state format change",
+        "mitigation": "failing-first exclusivity and CLI-wiring tests on both platform branches, 5s timeout with a clear Error/Why/Fix path, full chronos gates via aikit check before commit, ADR-007 recorded"
+      }
+    },
+    {
+      "task_id": "task-chronos-locking-v1",
+      "phase": "phase 3",
+      "phase_num": 3,
+      "description": "[2/3] Failing-first tests added (69 -> 71: lock exclusivity and CLI wiring), then implemented StorageEngine.locked (msvcrt/fcntl) and wrapped main dispatch; ADR-007 and README updated; 71 tests green; 20 concurrent task adds all persisted",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283858.2848423,
+      "timestamp_str": "2026-10-29 17:24:18",
+      "agent": "opencode:reforge-followup"
+    },
+    {
+      "task_id": "task-chronos-locking-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[3/3] Phase 4 green on the working tree: 71/71 tests in 1.9s; aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; 20 concurrent task adds all persisted; ADR-007 recorded; README and codebase map synchronized",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793283899.0283573,
+      "timestamp_str": "2026-10-29 17:24:59",
+      "agent": "opencode:reforge-followup"
+    },
+    {
+      "task_id": "task-chronos-locking-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-locking-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793283910.2265298,
+      "timestamp_str": "2026-10-29 17:25:10",
+      "agent": "opencode:reforge-followup"
     }
   ]
 }

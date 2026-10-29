@@ -13,7 +13,7 @@ from chronos.analytics import compute_metrics, select_history
 from chronos.models import SessionState, TaskItem, TaskStatus, now_iso, parse_iso, try_parse_iso
 from chronos.orchestrator import SessionOrchestrator
 from chronos.repository import Repository
-from chronos.storage import StorageEngine
+from chronos.storage import StorageEngine, StorageLockError
 
 
 def _configure_output_encoding() -> None:
@@ -440,20 +440,8 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[List[str]] = None) -> int:
-    _configure_output_encoding()
-    parser = build_parser()
-    args = parser.parse_args(argv)
-
-    if not args.command:
-        parser.print_help()
-        return 0
-
-    data_dir = args.data_dir or get_default_data_dir()
-    storage = StorageEngine(data_dir)
-    repository = Repository(storage)
-    orchestrator = SessionOrchestrator(storage, repository)
-
+def _dispatch(args: argparse.Namespace, repository: Repository,
+              orchestrator: SessionOrchestrator) -> int:
     if args.command == "start":
         return cmd_start(args, orchestrator)
     if args.command == "pause":
@@ -476,6 +464,28 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_task(args, repository, orchestrator)
 
     return 0
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    _configure_output_encoding()
+    parser = build_parser()
+    args = parser.parse_args(argv)
+
+    if not args.command:
+        parser.print_help()
+        return 0
+
+    data_dir = args.data_dir or get_default_data_dir()
+    storage = StorageEngine(data_dir)
+    repository = Repository(storage)
+    orchestrator = SessionOrchestrator(storage, repository)
+
+    try:
+        with storage.locked():
+            return _dispatch(args, repository, orchestrator)
+    except StorageLockError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

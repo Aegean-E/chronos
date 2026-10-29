@@ -11,3 +11,5 @@ __pycache__/
 # Local Chronos runtime data
 .chronos/
 
+# AIKit transient state
+node_modules/

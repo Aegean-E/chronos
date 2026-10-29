@@ -52,6 +52,14 @@ contract, a dependency, a data format or the architecture; IDs are consecutive a
 - **Decision**: Add `chronos task show <id>` (text and `--json` view with estimate, spent time, status, and linked historical focus sessions), `chronos task remove <id>` (with `rm` and `delete` aliases, preventing removal of any task currently bound to an active session), `chronos task clear` (pruning all completed tasks atomically), and `--status` / `--json` flags to `chronos task list`. Backed by atomic repository operations `delete_task` and `clear_completed_tasks`.
 - **Consequences**: Users gain complete lifecycle control over tasks with safety invariants against deleting in-flight session bindings. No existing commands break and the on-disk storage format remains backward-compatible.
 
+
+### ADR-007: Data-Directory Lock for Concurrent CLI Commands
+- **Date**: 2026-10-29
+- **Status**: Accepted
+- **Context**: ADR-001 promised file locking, but the storage engine only performed atomic temp+fsync+replace writes, and ADR-003/ADR-004 recorded the resulting last-writer-wins limitation as accepted. Atomic replace prevents a torn file, not a lost update: two CLI processes could read the same `tasks.json` or `sessions.json`, and the later replace discarded the other process's change.
+- **Decision**: `StorageEngine.locked()` takes an advisory lock on a `.lock` file in the data directory using `msvcrt.locking` on Windows and `fcntl.flock` on POSIX, both standard library. `main()` holds it once around the whole command, so repository read-modify-write sequences and session lifecycle transitions serialize per data directory. Acquisition retries for five seconds, then raises `StorageLockError`, which the CLI prints as a one-line error and exit 1; the operating system releases the lock when the process exits.
+- **Consequences**: Concurrent CLI commands against one data directory are ordered instead of racing, and the ADR-001 contract is now accurate. Read-only commands wait briefly behind a writer. A crash leaves a harmless `.lock` file whose OS lock is already released. Library callers that use `Repository` directly, outside the CLI, must hold `StorageEngine.locked()` themselves. The on-disk JSON schema is unchanged.
+
 ## Licensing migration (v0.1.0-agpl)
 
 - New versions use the Aegean License 1.1 (AL-1.1); versions up to and including `v0.1.0-agpl` remain under GNU AGPL-3.0.
