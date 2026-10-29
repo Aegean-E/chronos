@@ -133,7 +133,7 @@ stats window.
 - **Crash Resilience**: State writes use atomic temp files with `fsync`, atomic `os.replace`, and a POSIX directory flush to prevent corrupted state on sudden termination.
 - **Idempotent Lifecycle**: a stale `completed`/`aborted` active record left by a crash is ignored, so repeating `finish` or `abort` cannot credit a bound task twice.
 - **Resilient Console & State**: redirected or legacy-encoding terminals degrade gracefully instead of crashing, and unreadable or hand-edited state files are quarantined (with collision-free names) and recovered from the atomic backup. Concurrent CLI commands serialize on one advisory data-directory lock, so read-modify-write updates cannot be lost.
-- **Fast Test Suite**: 100% test pass rate in <1 second with `python -m unittest discover`.
+- **Fast Test Suite**: 100% test pass rate in under 3 seconds with `python -m unittest discover`.
 
 <!-- aegean:brand-assets:start -->
 ## 🎨 Brand Assets
