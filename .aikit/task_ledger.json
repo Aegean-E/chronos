@@ -1,46 +1,17 @@
 {
   "version": 1,
   "active_task": {
-    "task_id": "task-chronos-locking-v1",
+    "task_id": "task-chronos-lock-open-v1",
     "last_phase": "phase 4",
     "active_phase": 5,
     "status": "completed",
-    "updated_at": 1793283899.0283573,
+    "updated_at": 1793290579.1212275,
     "owner": "opencode:reforge-followup",
     "started_by": "opencode:reforge-followup",
     "continuations": [],
-    "completed_at": 1793283910.2265282
+    "completed_at": 1793290588.3944352
   },
   "checkpoints": [
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-task-mgmt-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792440049.0003984,
-      "timestamp_str": "2026-10-19 23:00:49"
-    },
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "completed",
-      "phase_num": 5,
-      "description": "Task 'task-chronos-task-mgmt-v1' completed successfully.",
-      "status": "completed",
-      "timestamp": 1792440105.5609019,
-      "timestamp_str": "2026-10-19 23:01:45"
-    },
-    {
-      "task_id": "reforge:run-1",
-      "phase": "reforge run",
-      "phase_num": 3,
-      "description": "run started (start=3, step=3, stop=None)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1793283080.9248796,
-      "timestamp_str": "2026-10-29 17:11:20",
-      "agent": "opencode"
-    },
     {
       "task_id": "reforge:run-1",
       "phase": "reforge stage 1",
@@ -248,6 +219,44 @@
       "timestamp": 1793284479.1618364,
       "timestamp_str": "2026-10-29 17:34:39",
       "agent": "opencode"
+    },
+    {
+      "task_id": "task-chronos-lock-open-v1",
+      "phase": "phase 2",
+      "phase_num": 2,
+      "description": "[1/1] Harden the data-directory lock: an unopenable lock file raises StorageLockError with a clear message instead of an uncaught PermissionError",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793290494.2701325,
+      "timestamp_str": "2026-10-29 19:14:54",
+      "agent": "opencode:reforge-followup",
+      "impact_assessment": {
+        "why": "StorageEngine.locked opens .lock outside the retry loop, but main catches only StorageLockError; a read-only or invalid data directory therefore prints a traceback instead of the CLI's Error line",
+        "benefits": "Every lock failure, not just contention, exits 1 with the same clear error and no traceback; the CLI contract stays consistent",
+        "risks": "contract: lock contention behavior unchanged, new error path only; dependency: none; concurrency: same lock, no new lock; state: no schema change",
+        "mitigation": "failing-first mock test for PermissionError on open, full 71-test suite, aikit check chronos 4/4, commit and push"
+      }
+    },
+    {
+      "task_id": "task-chronos-lock-open-v1",
+      "phase": "phase 4",
+      "phase_num": 4,
+      "description": "[1/1] Phase 4 green: 72/72 tests, aikit check chronos 4/4 (test, hygiene, guidelines, secrets), checklists: passed; unopenable lock file now raises StorageLockError with the path and OS reason",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793290579.1212275,
+      "timestamp_str": "2026-10-29 19:16:19",
+      "agent": "opencode:reforge-followup"
+    },
+    {
+      "task_id": "task-chronos-lock-open-v1",
+      "phase": "completed",
+      "phase_num": 5,
+      "description": "Task 'task-chronos-lock-open-v1' completed successfully.",
+      "status": "completed",
+      "timestamp": 1793290588.3944368,
+      "timestamp_str": "2026-10-29 19:16:28",
+      "agent": "opencode:reforge-followup"
     }
   ]
 }

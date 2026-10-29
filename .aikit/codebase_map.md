@@ -9,8 +9,8 @@
 - **Total Python Modules**: `15`
 - **Total Classes**: `16`
 - **Total Top-Level Functions**: `27`
-- **Total Class Methods**: `113`
-- **Total Source Lines**: `2368`
+- **Total Class Methods**: `114`
+- **Total Source Lines**: `2385`
 
 ---
 
@@ -131,7 +131,7 @@
 ### [`chronos/storage.py`](chronos/storage.py)
 > *Crash-resilient, atomic JSON storage engine for Chronos.*
 
-**Size**: `176` lines (`7176` bytes)
+**Size**: `183` lines (`7543` bytes)
 
 **Classes:**
 - `class StorageLockError` - *Raised when another process holds the data-directory lock.*
@@ -290,7 +290,7 @@
 ### [`tests/test_storage.py`](tests/test_storage.py)
 > *Unit tests for Chronos atomic storage engine.*
 
-**Size**: `91` lines (`3437` bytes)
+**Size**: `101` lines (`3946` bytes)
 
 **Classes:**
 - `class TestStorageEngine`
@@ -299,6 +299,7 @@
   - Method `.test_backup_and_recovery_on_corrupt_file()`
   - Method `.test_active_session_lifecycle()`
   - Method `.test_data_directory_lock_is_exclusive()`
+  - Method `.test_an_unopenable_lock_file_is_reported_as_a_lock_error()`
   - Method `.test_read_json_safe_survives_invalid_utf8_bytes()`
   - Method `.test_repeated_quarantine_does_not_overwrite_earlier_corrupt_file()`
   - Method `.test_read_json_safe_does_not_move_file_on_oserror()`

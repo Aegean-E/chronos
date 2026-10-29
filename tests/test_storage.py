@@ -5,6 +5,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from chronos.storage import StorageEngine, StorageLockError
 
@@ -57,6 +58,15 @@ class TestStorageEngine(unittest.TestCase):
 
         with other.locked(timeout=0.2):
             self.assertTrue((self.temp_dir / ".lock").exists())
+
+    def test_an_unopenable_lock_file_is_reported_as_a_lock_error(self):
+        # A read-only data directory must not print a traceback from `open(.lock)`.
+        with mock.patch("builtins.open", side_effect=PermissionError("denied")):
+            with self.assertRaises(StorageLockError) as raised:
+                with self.engine.locked():
+                    pass
+        self.assertIn("lock file", str(raised.exception))
+        self.assertIn("denied", str(raised.exception))
 
     def test_read_json_safe_survives_invalid_utf8_bytes(self):
         target = self.temp_dir / "history.json"
