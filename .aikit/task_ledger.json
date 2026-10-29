@@ -14,42 +14,6 @@
   "checkpoints": [
     {
       "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "phase 2",
-      "phase_num": 2,
-      "description": "[1/4] Plan: extended task management (task remove, clear completed, show with linked session progress, list --status/--json)",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792439784.1986458,
-      "timestamp_str": "2026-10-19 22:56:24",
-      "impact_assessment": {
-        "why": "Micro-milestones in Chronos could only be added, listed, or completed; users could not inspect deep task details (e.g. linked focus sessions and progress), delete accidental tasks, clear completed backlog clutter, or filter/export task lists",
-        "benefits": "Users gain full lifecycle management over tasks: 'task show' inspects estimate, spent time, and linked focus sessions; 'task remove' safely deletes unused tasks (preventing deletion of active session tasks); 'task clear' prunes completed backlog; 'task list' supports --status and --json",
-        "risks": "contract: new subcommands and options added to 'task'; existing 'task add', 'task list', 'task done' backwards-compatible; dependency: none (stdlib only); concurrency: atomic writes preserved; state: on-disk JSON schema unchanged",
-        "mitigation": "Failing-first tests for repository mutations, active session protection, and CLI subcommands; verify 4/4 aikit check chronos gates before commit; record ADR-006"
-      }
-    },
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "phase 3",
-      "phase_num": 3,
-      "description": "[2/4] Failing-first unit and CLI tests added (62 -> 68) for repository clear_completed_tasks/delete_task and CLI task remove, clear, show, and list filtering/JSON",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792439891.3048453,
-      "timestamp_str": "2026-10-19 22:58:11"
-    },
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
-      "phase": "phase 4",
-      "phase_num": 4,
-      "description": "[4/4] Phase 4 green: 69/69 tests in 1.2s, aikit check chronos 4/4 gates (test, hygiene, guidelines, secrets); checklists: passed; ADR-006 recorded; README and codebase map synchronized",
-      "files_affected": [],
-      "status": "in_progress",
-      "timestamp": 1792440044.6907873,
-      "timestamp_str": "2026-10-19 23:00:44"
-    },
-    {
-      "task_id": "task-chronos-task-mgmt-v1",
       "phase": "completed",
       "phase_num": 5,
       "description": "Task 'task-chronos-task-mgmt-v1' completed successfully.",
@@ -251,6 +215,39 @@
       "timestamp": 1793283910.2265298,
       "timestamp_str": "2026-10-29 17:25:10",
       "agent": "opencode:reforge-followup"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 7",
+      "phase_num": 3,
+      "description": "Reforge stage 7: run resumed",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793284442.0056343,
+      "timestamp_str": "2026-10-29 17:34:02",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 8",
+      "phase_num": 3,
+      "description": "Reforge stage 8: window 36, 1 commit(s), 9 file(s) reviewed (unreviewed), 0 finding(s), 0 repaired",
+      "files_affected": [],
+      "status": "in_progress",
+      "timestamp": 1793284454.8049448,
+      "timestamp_str": "2026-10-29 17:34:14",
+      "agent": "opencode"
+    },
+    {
+      "task_id": "reforge:run-1",
+      "phase": "reforge stage 8",
+      "phase_num": 3,
+      "description": "Reforge stage 8: run stopped at stage 8; resume it with `reforge resume`",
+      "files_affected": [],
+      "status": "suspended",
+      "timestamp": 1793284479.1618364,
+      "timestamp_str": "2026-10-29 17:34:39",
+      "agent": "opencode"
     }
   ]
 }
